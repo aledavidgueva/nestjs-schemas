@@ -1,0 +1,25 @@
+{
+  "name": "nestjs-metadata-scanner",
+  "version": "0.0.1",
+  "description": "Metadata scanner for DTO's",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aledavidgueva/nestjs-metadata-scanner.git"
+  },
+  "keywords": [
+    "nestjs",
+    "modules",
+    "metadata",
+    "reflection"
+  ],
+  "author": "Alejandro D. Guevara",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aledavidgueva/nestjs-metadata-scanner/issues"
+  },
+  "homepage": "https://github.com/aledavidgueva/nestjs-metadata-scanner#readme"
+}
