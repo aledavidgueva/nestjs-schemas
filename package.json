@@ -1,7 +1,7 @@
 {
-  "name": "nestjs-metadata-scanner",
+  "name": "nestjs-metadata-storage",
   "version": "0.0.1",
-  "description": "Metadata scanner for DTO's",
+  "description": "Metadata storage for schemas",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aledavidgueva/nestjs-metadata-scanner.git"
+    "url": "git+https://github.com/aledavidgueva/nestjs-metadata-storage.git"
   },
   "keywords": [
     "nestjs",
@@ -22,9 +22,9 @@
   "author": "Alejandro D. Guevara",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/aledavidgueva/nestjs-metadata-scanner/issues"
+    "url": "https://github.com/aledavidgueva/nestjs-metadata-storage/issues"
   },
-  "homepage": "https://github.com/aledavidgueva/nestjs-metadata-scanner#readme",
+  "homepage": "https://github.com/aledavidgueva/nestjs-metadata-storage#readme",
   "dependencies": {
     "@nestjs/common": "^9",
     "@nestjs/mongoose": "^9",
