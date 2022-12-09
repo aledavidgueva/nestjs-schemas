@@ -1,12 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { PropDef, PropType, SchemaMap, TypeInfo } from '../types';
+import { PropType, SchemaMap, TypeInfo } from '../types';
 import 'reflect-metadata';
 
 class MetadataStorageHost {
   private _schemas: SchemaMap = new Map();
-
-  //private _cacheProjections: Map<string, any> = new Map();
-  //private _cachePopulate: Map<string, any> = new Map();
 
   setSchema(
     schema: Function | Object, //
@@ -189,9 +186,6 @@ class MetadataStorageHost {
     return this._schemas.has(schemaName);
   }
 
-  /**
-   * Helpers
-   */
   getProps(schema: string | Function | Object) {
     const schemaMetadata = this.getSchema(schema);
     if (!schemaMetadata) {
