@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { PropType, SchemaMap, TypeInfo } from '../types';
+import 'reflect-metadata';
 
 class MetadataStorageHost {
   private _schemas: SchemaMap = new Map();
@@ -8,36 +9,36 @@ class MetadataStorageHost {
   //private _cachePopulate: Map<string, any> = new Map();
 
   setSchema(
-    schema: string | Function, //
+    schema: Function | Object, //
     metadata: Map<string, any> = new Map(),
   ) {
     // check and get schema
-    const schemaName = this._schemaName(schema);
+    const schemaName = this._getName(schema);
     if (!this._schemas.has(schemaName)) {
+      const parent = this._getParentName(schema);
       this._schemas.set(schemaName, {
-        schemaName,
+        factory: this._getFactory(schema),
+        parent: parent,
+        props: parent ? this.getSchemaProps(parent) ?? new Map() : new Map(),
         metadata,
-        props: new Map(),
       });
     }
   }
 
   setPropInSchema(
-    schema: string | Function, //
+    schema: Function | Object, //
     propertyName: string,
-    typeInfo: TypeInfo,
+    typeInfo?: TypeInfo,
     initialMetadata: Map<string, any> = new Map(),
   ) {
     // check and get schema
     this.setSchema(schema);
-    const schemaName = this._schemaName(schema);
+    const schemaName = this._getName(schema);
     const schemaDef = this._schemas.get(schemaName)!;
     // check and get prop
     try {
       schemaDef.props.set(propertyName, {
-        parent: schemaName,
-        isNulleable: undefined,
-        type: this._objectTypeDetector(typeInfo),
+        type: this._objectTypeDetector(schema, propertyName, typeInfo),
         metadata: initialMetadata,
       });
     } catch (err) {
@@ -48,12 +49,12 @@ class MetadataStorageHost {
   }
 
   setMetadata(
-    schema: string | Function, //
+    schema: Function | Object, //
     propertyName: string,
     key: string,
     value: any,
   ) {
-    const schemaName = this._schemaName(schema);
+    const schemaName = this._getName(schema);
     const schemaDef = this._schemas.get(schemaName);
     if (!schemaDef) {
       throw new Error(`Error setting metadata: Schema ${schemaName} not found.`);
@@ -68,11 +69,11 @@ class MetadataStorageHost {
   }
 
   getMetadata(
-    schema: string | Function, //
+    schema: string | Function | Object, //
     propertyName: string,
     key: string,
   ): any {
-    const schemaName = this._schemaName(schema);
+    const schemaName = this._getName(schema);
     const schemaDef = this._schemas.get(schemaName);
     if (!schemaDef) {
       throw new Error(`Error getting metadata: Schema ${schemaName} not found.`);
@@ -90,13 +91,18 @@ class MetadataStorageHost {
     return this._schemas;
   }
 
-  getSchema(schema: string | Function) {
-    const schemaName = this._schemaName(schema);
+  getSchema(schema: string | Function | Object) {
+    const schemaName = this._getName(schema);
     return this._schemas.get(schemaName);
   }
 
-  getSchemaTypes(schema: string | Function) {
-    const schemaName = this._schemaName(schema);
+  getSchemaProps(schema: string | Function | Object) {
+    const schemaName = this._getName(schema);
+    return this._schemas.get(schemaName)?.props;
+  }
+
+  getSchemaTypes(schema: string | Function | Object) {
+    const schemaName = this._getName(schema);
     const schemaDef = this._schemas.get(schemaName);
     const map = new Map();
     schemaDef?.props.forEach((propDef, propertyName) => {
@@ -105,7 +111,7 @@ class MetadataStorageHost {
     return map;
   }
 
-  getProp(schema: string | Function, propertyName: string) {
+  getProp(schema: string | Function | Object, propertyName: string) {
     const schemas = this.getSchema(schema);
     return schemas?.props.get(propertyName);
   }
@@ -119,86 +125,69 @@ class MetadataStorageHost {
     //this._properties.clear();
   }
 
-  // TODO: Sort
-  /* 
-  private _sortSchema(schemaName: string) {
-    const oldSchema = this.getSchema(schemaName);
-    if (oldSchema) {
-      this._schemas.set(schemaName, new Map([...oldSchema].sort()));
-    }
-  }
-  */
+  private _objectTypeDetector(schema: any, propertyName: any, typeInfo: TypeInfo = {}): PropType {
+    const reflectedType = Reflect.getMetadata('design:type', schema, propertyName);
 
-  private _objectTypeDetector(typeInfo: TypeInfo): PropType {
-    if (typeInfo.objectType) {
-      return typeInfo.objectType;
+    let type: any = 'undefined';
+    if (typeInfo.type) {
+      type = typeInfo.type;
+    } else if (typeInfo.factory) {
+      type = typeInfo.factory();
+    } else {
+      type = reflectedType;
     }
 
-    let type = typeInfo?.type ?? typeInfo?.typeConstructor?.() ?? typeInfo?.reflectedType;
     let className = 'undefined';
 
     const isArray =
-      Array.isArray(typeInfo?.type) ||
-      typeInfo?.type === Array ||
-      typeInfo?.reflectedType === Array;
+      Array.isArray(typeInfo.type) || typeInfo.type === Array || reflectedType === Array;
 
     if (Array.isArray(type)) {
       type = type[0];
-      className = this._getTypeName(type);
+      className = this._getName(type);
     } else {
-      className = this._getTypeName(type);
+      className = this._getName(type);
     }
 
-    if (className === 'undefined' || className === 'Array') {
-      /*       console.log({
-        metadata,
-        isArray,
-        type,
-      }); */
-      throw new Error();
+    if (className === 'undefined' || className === 'Array' || className === 'Object') {
+      throw new Error(`Unrecognized type`);
     }
 
     return {
       type: className,
       isArray: isArray,
-      isFinal: this._isFinal(className),
+      required: typeInfo.required ?? true,
+      factory: typeInfo.factory,
+      enum: typeInfo.enum,
     };
   }
 
-  private _getTypeName(type: any) {
-    let typeName = 'undefined';
-    if (type?.schemaName) {
-      typeName = type.schemaName;
-    } else {
-      typeName =
-        type instanceof Function ? type?.name ?? 'undefined' : type.constructor.name ?? 'undefined';
-    }
-    return typeName;
+  private _getFactory(schema: Function | Object) {
+    return schema instanceof Function ? schema : schema.constructor;
   }
 
-  private _isFinal(typeName: string) {
-    const isDto =
-      typeName.lastIndexOf('Dto') === typeName.length - 3 ||
-      typeName.lastIndexOf('DTO') === typeName.length - 3;
-    return (
-      !isDto &&
-      (typeName === 'String' ||
-        typeName === 'Number' ||
-        typeName === 'Boolean' ||
-        typeName === 'Date' ||
-        typeName === 'Mixed' ||
-        typeName === 'ObjectId')
-    );
+  private _getParent(schema: Function | Object) {
+    return Object.getPrototypeOf(this._getFactory(schema));
   }
 
-  private _schemaName(schema: string | Function) {
-    return typeof schema === 'string' ? schema : schema.name;
+  private _getParentName(schema: Function | Object) {
+    const name = this._getParent(schema).name;
+    return name ? name : null;
+  }
+
+  private _getName(schema: string | Function | Object): string {
+    return typeof schema === 'string' ? schema : this._getFactory(schema).name;
+  }
+
+  schemaExists(schema: string | Function | Object) {
+    const schemaName = this._getName(schema);
+    return this._schemas.has(schemaName);
   }
 
   /**
    * Helpers
    */
-  getProps(schema: string | Function) {
+  getProps(schema: string | Function | Object) {
     const schemaMetadata = this.getSchema(schema);
     if (!schemaMetadata) {
       return undefined;
@@ -208,6 +197,30 @@ class MetadataStorageHost {
       properties.push(property);
     }
     return properties;
+  }
+
+  copyProps(
+    source: Function | Object,
+    dest: Function | Object,
+    includeProps?: string[],
+    excludeProps?: string[],
+  ) {
+    // check and get props of source schema
+    if (!this.schemaExists(source))
+      throw new Error(`Source schema ${this._getName(source)} not exists.`);
+    const sourceProps = this._schemas.get(this._getName(source))!.props;
+    // check and get dest schema
+    this.setSchema(dest);
+    const destProps = this._schemas.get(this._getName(dest))!.props;
+    // copy process
+    sourceProps.forEach((def, key) => {
+      if (
+        (excludeProps === undefined || !excludeProps.includes(key)) &&
+        (includeProps === undefined || includeProps.includes(key))
+      ) {
+        destProps.set(key, def);
+      }
+    });
   }
 }
 

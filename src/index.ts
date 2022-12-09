@@ -1,3 +1,4 @@
 export * from './types';
+export * from './decorators';
+export * from './type-helpers';
 export * from './lib/storage';
-// export * from './decorators/schema-scanner.decorator';
