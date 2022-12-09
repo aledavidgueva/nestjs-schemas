@@ -1,0 +1,19 @@
+# source
+src
+
+.editorconfig
+.prettierrc
+package-lock.json
+tsconfig.json
+.eslintignore
+.eslintrc.js
+.github
+.vscode
+
+# misc
+renovate.json
+npm-debug.log
+.DS_Store
+.commitlintrc.json
+.release-it.json
+CONTRIBUTING.md
