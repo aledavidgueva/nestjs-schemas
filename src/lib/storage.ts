@@ -15,13 +15,18 @@ class MetadataStorageHost {
     // check and get schema
     const schemaName = this._getName(schema);
     if (!this._schemas.has(schemaName)) {
-      const parent = this._getParentName(schema);
+      const parentName = this._getParentName(schema);
+
       this._schemas.set(schemaName, {
         factory: this._getFactory(schema),
-        parent: parent,
-        props: parent ? this.getSchemaProps(parent) ?? new Map() : new Map(),
+        parent: parentName,
+        props: new Map(),
         metadata,
       });
+
+      if (parentName) {
+        this.copyProps(this._getParent(schema), schema);
+      }
     }
   }
 
@@ -170,8 +175,8 @@ class MetadataStorageHost {
     return Object.getPrototypeOf(this._getFactory(schema));
   }
 
-  private _getParentName(schema: Function | Object) {
-    const name = this._getParent(schema).name;
+  private _getParentName(schema: Function | Object): string | null {
+    const name = this._getParent(schema).name ?? null;
     return name ? name : null;
   }
 
@@ -221,12 +226,11 @@ class MetadataStorageHost {
         (opts.excludeProps === undefined || !opts.excludeProps.includes(key)) &&
         (opts.includeProps === undefined || opts.includeProps.includes(key))
       ) {
-        destProps.set(key, def);
-        if (opts.makePartial === true) {
-          const newDef = destProps.get(key)!;
-          newDef.type.required = false;
-          destProps.set(key, def);
-        }
+        destProps.set(key, {
+          metadata: new Map(def.metadata),
+          type: { ...def.type },
+        });
+        if (opts.makePartial === true) destProps.get(key)!.type.required = false;
       }
     });
   }

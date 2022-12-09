@@ -19,7 +19,7 @@ export type PropDef = {
 
 export type SchemaDef = {
   factory: Function;
-  parent: string;
+  parent: string | null;
   metadata: Map<string, any>;
   props: Map<string, PropDef>;
 };
