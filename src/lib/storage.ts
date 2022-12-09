@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { PropType, SchemaMap, TypeInfo } from '../types';
+import { PropDef, PropType, SchemaMap, TypeInfo } from '../types';
 import 'reflect-metadata';
 
 class MetadataStorageHost {
@@ -202,8 +202,11 @@ class MetadataStorageHost {
   copyProps(
     source: Function | Object,
     dest: Function | Object,
-    includeProps?: string[],
-    excludeProps?: string[],
+    opts: {
+      includeProps?: string[];
+      excludeProps?: string[];
+      makePartial?: boolean;
+    } = {},
   ) {
     // check and get props of source schema
     if (!this.schemaExists(source))
@@ -215,10 +218,15 @@ class MetadataStorageHost {
     // copy process
     sourceProps.forEach((def, key) => {
       if (
-        (excludeProps === undefined || !excludeProps.includes(key)) &&
-        (includeProps === undefined || includeProps.includes(key))
+        (opts.excludeProps === undefined || !opts.excludeProps.includes(key)) &&
+        (opts.includeProps === undefined || opts.includeProps.includes(key))
       ) {
         destProps.set(key, def);
+        if (opts.makePartial === true) {
+          const newDef = destProps.get(key)!;
+          newDef.type.required = false;
+          destProps.set(key, def);
+        }
       }
     });
   }
