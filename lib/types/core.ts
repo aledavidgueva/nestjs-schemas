@@ -27,3 +27,11 @@ export type SchemaDef = {
 export type SchemaMap = Map<string, SchemaDef>;
 
 export type PropMap = Map<string, PropDef>;
+
+export type MetadataModuleOptions = {
+  /**
+   * If "true", registers `ConfigModule` as a global module.
+   * See: https://docs.nestjs.com/modules#global-modules
+   */
+  isGlobal?: boolean;
+};

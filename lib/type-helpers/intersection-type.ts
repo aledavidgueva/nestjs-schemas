@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
 import { IntersectionType as NestJSSwaggerIntersectionType } from '@nestjs/swagger';
-import { metadataStorage } from '../lib/storage';
+import { _MetadataStorageV1 } from '../libs';
 
 export function IntersectionType<A, B>(classARef: Type<A>, classBRef: Type<B>): Type<A & B>;
 export function IntersectionType<A, B, C>(
@@ -540,8 +540,8 @@ export function IntersectionType(...classRefs: Type[]) {
       classARef = classBRef;
     } else {
       resultClass = NestJSSwaggerIntersectionType(classARef, classBRef);
-      metadataStorage.copyProps(classARef, resultClass);
-      metadataStorage.copyProps(classBRef, resultClass);
+      _MetadataStorageV1.copyProps(classARef, resultClass);
+      _MetadataStorageV1.copyProps(classBRef, resultClass);
       classARef = resultClass;
     }
   }
