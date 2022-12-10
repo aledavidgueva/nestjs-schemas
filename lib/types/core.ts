@@ -63,6 +63,6 @@ export type PropertyOptions = {
   };
   validator?: PropertyDecorator[];
   mongoose?: PropOptions;
-  decorators?: PropertyDecorator[];
   metadata?: { [key: string]: any };
+  [group: string]: PropertyDecorator[] | any;
 };
