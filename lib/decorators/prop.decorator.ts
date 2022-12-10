@@ -64,7 +64,9 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
           throw new Error(`
             Invalid value detected in the validator config of property ${property} in schema ${
             target.name ?? target.constructor.name
-          } => ${ValidationDecorator.name ?? ValidationDecorator.constructor.name}.
+          } => ${
+            ValidationDecorator.name ?? ValidationDecorator.constructor.name ?? ValidationDecorator
+          }.
             The value passed is not a valid decorator.
             Remember make call over decorator function (add parenthesis).
             For example, IsArray(). Warning to use IsArray without valid brackets.
@@ -76,6 +78,22 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
     // Apply mongoose decorators
     if (options?.mongoose !== undefined) {
       Prop(options.mongoose)(target, property);
+    }
+
+    // Apply custom decorators
+    if (options?.decorators !== undefined) {
+      options.decorators.forEach((Decorator) => {
+        if (Decorator(target, property) !== undefined) {
+          throw new Error(`
+            Invalid value detected in the decorators config of property ${property} in schema ${
+            target.name ?? target.constructor.name
+          } => ${Decorator.name ?? Decorator.constructor.name ?? Decorator}.
+            The value passed is not a valid decorator.
+            Remember make call over decorator function (add parenthesis).
+            For example, CustomDecorator(). Warning to use CustomDecorator without valid brackets.
+          `);
+        }
+      });
     }
   };
 }

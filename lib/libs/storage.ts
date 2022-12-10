@@ -46,12 +46,7 @@ class MetadataStorageHostV1 {
       schemaDef.props.set(property, {
         type: this._objectTypeDetector(schema, property, options),
         metadata,
-        options: {
-          mongoose: options.mongoose ? options.mongoose : undefined,
-          swagger: options.swagger ? { ...options.swagger } : undefined,
-          transformer: options.transformer ? { ...options.transformer } : undefined,
-          validator: options.validator ? [...options.validator] : undefined,
-        },
+        options: this._copyPropertyOptions(options),
       });
     } catch (err) {
       throw new Error(`Error trying detect type for prop '${property}' on schema ${schemaName}`);
@@ -180,16 +175,10 @@ class MetadataStorageHostV1 {
         (opts.excludeProps === undefined || !opts.excludeProps.includes(key)) &&
         (opts.includeProps === undefined || opts.includeProps.includes(key))
       ) {
-        const options = def.options;
         destProps.set(key, {
           metadata: new Map(def.metadata),
           type: { ...def.type },
-          options: {
-            mongoose: options.mongoose ? options.mongoose : undefined,
-            swagger: options.swagger ? { ...options.swagger } : undefined,
-            transformer: options.transformer ? { ...options.transformer } : undefined,
-            validator: options.validator ? [...options.validator] : undefined,
-          },
+          options: this._copyPropertyOptions(def.options),
         });
         if (opts.makePartial === true) {
           const newProp = destProps.get(key)!;
@@ -198,6 +187,16 @@ class MetadataStorageHostV1 {
         }
       }
     });
+  }
+
+  private _copyPropertyOptions(options: PropertyOptions): PropertyOptions {
+    return {
+      mongoose: options.mongoose ? options.mongoose : undefined,
+      swagger: options.swagger ? { ...options.swagger } : undefined,
+      transformer: options.transformer ? { ...options.transformer } : undefined,
+      validator: options.validator ? [...options.validator] : undefined,
+      decorators: options.decorators ? [...options.decorators] : undefined,
+    };
   }
 
   /**
