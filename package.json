@@ -28,6 +28,8 @@
     "@nestjs/common": "^9",
     "@nestjs/mapped-types": "^1",
     "@nestjs/swagger": "^6",
+    "class-transformer": "^0",
+    "class-validators": "^1",
     "reflect-metadata": "^0",
     "rxjs": "^7"
   },

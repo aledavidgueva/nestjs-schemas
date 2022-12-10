@@ -1,7 +1,10 @@
 import { _MetadataStorageV1 } from '../libs';
 
-export function _Schema(metadata?: Map<string, any>): ClassDecorator {
+export function $Schema(metadata: { [key: string]: any }): ClassDecorator {
   return (target) => {
-    _MetadataStorageV1.setSchema(target, metadata);
+    _MetadataStorageV1.setSchema(target);
+    for (let key in metadata) {
+      _MetadataStorageV1.setMetadata(key, metadata[key], target);
+    }
   };
 }

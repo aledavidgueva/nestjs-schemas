@@ -1,6 +1,7 @@
 # source
 lib
 src
+test
 
 .editorconfig
 .prettierrc
