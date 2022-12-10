@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import 'reflect-metadata';
-import { PropOptions, PropType, SchemaMap } from '../types';
+import { PropertyOptions, PropType, SchemaMap } from '../types';
 
 /**
  * Storage for simple reflect and custom metadata storage.
@@ -34,7 +34,7 @@ class MetadataStorageHostV1 {
   setPropInSchema(
     schema: Function | Object, //
     property: string,
-    options?: PropOptions,
+    options: PropertyOptions = {},
     metadata: Map<string, any> = new Map(),
   ) {
     // check and get schema
@@ -46,6 +46,12 @@ class MetadataStorageHostV1 {
       schemaDef.props.set(property, {
         type: this._objectTypeDetector(schema, property, options),
         metadata,
+        options: {
+          mongoose: options.mongoose ? options.mongoose : undefined,
+          swagger: options.swagger ? { ...options.swagger } : undefined,
+          transformer: options.transformer ? { ...options.transformer } : undefined,
+          validator: options.validator ? [...options.validator] : undefined,
+        },
       });
     } catch (err) {
       throw new Error(`Error trying detect type for prop '${property}' on schema ${schemaName}`);
@@ -174,11 +180,22 @@ class MetadataStorageHostV1 {
         (opts.excludeProps === undefined || !opts.excludeProps.includes(key)) &&
         (opts.includeProps === undefined || opts.includeProps.includes(key))
       ) {
+        const options = def.options;
         destProps.set(key, {
           metadata: new Map(def.metadata),
           type: { ...def.type },
+          options: {
+            mongoose: options.mongoose ? options.mongoose : undefined,
+            swagger: options.swagger ? { ...options.swagger } : undefined,
+            transformer: options.transformer ? { ...options.transformer } : undefined,
+            validator: options.validator ? [...options.validator] : undefined,
+          },
         });
-        if (opts.makePartial === true) destProps.get(key)!.type.required = false;
+        if (opts.makePartial === true) {
+          const newProp = destProps.get(key)!;
+          newProp.type.required = false;
+          if (newProp.options.swagger) newProp.options.swagger.required = false;
+        }
       }
     });
   }
@@ -186,12 +203,12 @@ class MetadataStorageHostV1 {
   /**
    * Try to recognize type of schema property
    */
-  private _objectTypeDetector(schema: any, property: any, options: PropOptions = {}): PropType {
+  private _objectTypeDetector(schema: any, property: any, options: PropertyOptions = {}): PropType {
     const reflectedType = Reflect.getMetadata('design:type', schema, property);
 
     let type: any = 'undefined';
-    if (options.property?.type) {
-      type = options.property.type;
+    if (options.swagger?.type) {
+      type = options.swagger.type;
     } else if (options.transformer?.type) {
       const factory = !Array.isArray(options.transformer.type)
         ? options.transformer.type
@@ -204,9 +221,9 @@ class MetadataStorageHostV1 {
     let className = 'undefined';
 
     const isArray =
-      options.property?.isArray ||
-      Array.isArray(options.property?.type) ||
-      options.property?.type === Array ||
+      options.swagger?.isArray ||
+      Array.isArray(options.swagger?.type) ||
+      options.swagger?.type === Array ||
       reflectedType === Array;
 
     if (Array.isArray(type)) {
@@ -223,11 +240,11 @@ class MetadataStorageHostV1 {
     return {
       type: className,
       isArray: isArray,
-      required: options.property?.required ?? true,
+      required: options.swagger?.required ?? true,
       factory: !Array.isArray(options.transformer?.type)
         ? options.transformer?.type
         : options.transformer?.type[0],
-      enum: options.property?.enum,
+      enum: options.swagger?.enum,
     };
   }
 

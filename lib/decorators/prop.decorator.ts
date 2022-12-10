@@ -1,9 +1,10 @@
+import { Prop } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { _MetadataStorageV1 } from '../libs';
-import { PropOptions } from '../types';
+import { PropertyOptions } from '../types';
 
-export function $Prop(options: PropOptions = {}): PropertyDecorator {
+export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
   return (target: any, property: any) => {
     // Add information to metadata storage
     _MetadataStorageV1.setPropInSchema(target, property, options);
@@ -16,7 +17,7 @@ export function $Prop(options: PropOptions = {}): PropertyDecorator {
     }
 
     // Apply swagger decorators
-    ApiProperty(options.property)(target, property);
+    ApiProperty(options.swagger)(target, property);
 
     // Apply class transformer decorators
     if (options?.transformer) {
@@ -57,7 +58,7 @@ export function $Prop(options: PropOptions = {}): PropertyDecorator {
     }
 
     // Apply class validator decorators
-    if (options?.validator) {
+    if (options?.validator !== undefined) {
       options.validator.forEach((ValidationDecorator) => {
         if (ValidationDecorator(target, property) !== undefined) {
           throw new Error(`
@@ -70,6 +71,11 @@ export function $Prop(options: PropOptions = {}): PropertyDecorator {
           `);
         }
       });
+    }
+
+    // Apply mongoose decorators
+    if (options?.mongoose !== undefined) {
+      Prop(options.mongoose)(target, property);
     }
   };
 }

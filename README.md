@@ -1,6 +1,7 @@
 # Custom metadata storage for NestJS projects
 
-- New storage for custom metadata for schemas and props types.
+- New storage for custom metadata for schemas and props types, with access available for dev by service.
+- Organize decorator annotations in your schemas for better handling and readability.
 
 ## Usage
 
@@ -15,12 +16,23 @@ export enum StatusEnum {
   PUBLISHED = 'PUBLISHED',
 }
 
-@$Schema()
+@$Schema({
+  mongoose: {
+    timestamps: true,
+    collection: 'dummy',
+  },
+  metadata: {
+    customInfo: 'Custom string',
+  },
+})
 export class Dummy {
   @$Prop()
   _id: string;
 
-  @$Prop({ type: String, required: false })
+  @$Prop({
+    mongoose: { type: Schema.Types.String, default: null }
+    swagger: { type: String, required: false },
+  })
   category: string | null;
 
   @$Prop()
@@ -86,9 +98,15 @@ import { Faq } from './faq.dto';
 import { Plan } from './plan.dto';
 import { Payment } from './payment.dto';
 
-@$Schema({ metadata: 1 })
+@$Schema({
+  metadata: {
+    customInfo: 'Custom string',
+  },
+})
 export class FaqExtended extends IntersectionType(Faq, Plan, PartialType(Payment)) {
-  @$Prop({ type: String, required: false })
+  @$Prop({
+    swagger: { type: String, required: false },
+  })
   extra: string | null;
 }
 ```

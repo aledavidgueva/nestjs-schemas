@@ -1,3 +1,5 @@
+import * as mongoose from 'mongoose';
+import { PropOptions } from '@nestjs/mongoose';
 import { ApiPropertyOptions } from '@nestjs/swagger';
 import {
   ExcludeOptions,
@@ -19,6 +21,7 @@ export type PropType = {
 export type PropDef = {
   metadata: Map<string, any>;
   type: PropType; // type of prop
+  options: Omit<PropertyOptions, 'metadata'>;
 };
 
 export type SchemaDef = {
@@ -40,8 +43,13 @@ export type MetadataModuleOptions = {
   isGlobal?: boolean;
 };
 
-export type PropOptions = {
-  property?: ApiPropertyOptions;
+export type SchemaOptions = {
+  mongoose?: mongoose.SchemaOptions;
+  metadata?: { [key: string]: any };
+};
+
+export type PropertyOptions = {
+  swagger?: ApiPropertyOptions;
   transformer?: {
     expose?: boolean | ExposeOptions;
     exclude?: boolean | ExcludeOptions;
@@ -54,5 +62,6 @@ export type PropOptions = {
       | ((type?: TypeHelpOptions) => Function);
   };
   validator?: PropertyDecorator[];
+  mongoose?: PropOptions;
   metadata?: { [key: string]: any };
 };
