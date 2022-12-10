@@ -1,16 +1,20 @@
+import { ApiPropertyOptions } from '@nestjs/swagger';
+import {
+  ExcludeOptions,
+  ExposeOptions,
+  TransformFnParams,
+  TransformOptions,
+  TypeHelpOptions,
+  TypeOptions,
+} from 'class-transformer';
+
 export type PropType = {
   type: string;
   isArray: boolean;
   required: boolean;
-  enum?: { [key: string | number]: string | number } | undefined;
+  enum?: any[] | Record<string, any>;
   factory?: (any?: any) => Function | undefined;
 };
-
-export type TypeInfo = Partial<
-  Omit<PropType, 'type'> & {
-    type: any;
-  }
->;
 
 export type PropDef = {
   metadata: Map<string, any>;
@@ -34,4 +38,21 @@ export type MetadataModuleOptions = {
    * See: https://docs.nestjs.com/modules#global-modules
    */
   isGlobal?: boolean;
+};
+
+export type PropOptions = {
+  property?: ApiPropertyOptions;
+  transformer?: {
+    expose?: boolean | ExposeOptions;
+    exclude?: boolean | ExcludeOptions;
+    transform?: (
+      | [(params: TransformFnParams) => any, TransformOptions]
+      | ((params: TransformFnParams) => any)
+    )[];
+    type?:
+      | [(type?: TypeHelpOptions) => Function, TypeOptions]
+      | ((type?: TypeHelpOptions) => Function);
+  };
+  validator?: PropertyDecorator[];
+  metadata?: { [key: string]: any };
 };

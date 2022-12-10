@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { PropType, SchemaMap, TypeInfo } from '../types';
 import 'reflect-metadata';
+import { PropOptions, PropType, SchemaMap } from '../types';
 
 /**
  * Storage for simple reflect and custom metadata storage.
@@ -34,7 +34,7 @@ class MetadataStorageHostV1 {
   setPropInSchema(
     schema: Function | Object, //
     property: string,
-    typeInfo?: TypeInfo,
+    options?: PropOptions,
     metadata: Map<string, any> = new Map(),
   ) {
     // check and get schema
@@ -44,7 +44,7 @@ class MetadataStorageHostV1 {
     // check and get prop
     try {
       schemaDef.props.set(property, {
-        type: this._objectTypeDetector(schema, property, typeInfo),
+        type: this._objectTypeDetector(schema, property, options),
         metadata,
       });
     } catch (err) {
@@ -186,14 +186,17 @@ class MetadataStorageHostV1 {
   /**
    * Try to recognize type of schema property
    */
-  private _objectTypeDetector(schema: any, property: any, typeInfo: TypeInfo = {}): PropType {
+  private _objectTypeDetector(schema: any, property: any, options: PropOptions = {}): PropType {
     const reflectedType = Reflect.getMetadata('design:type', schema, property);
 
     let type: any = 'undefined';
-    if (typeInfo.type) {
-      type = typeInfo.type;
-    } else if (typeInfo.factory) {
-      type = typeInfo.factory();
+    if (options.property?.type) {
+      type = options.property.type;
+    } else if (options.transformer?.type) {
+      const factory = !Array.isArray(options.transformer.type)
+        ? options.transformer.type
+        : options.transformer.type[0];
+      type = factory();
     } else {
       type = reflectedType;
     }
@@ -201,7 +204,10 @@ class MetadataStorageHostV1 {
     let className = 'undefined';
 
     const isArray =
-      Array.isArray(typeInfo.type) || typeInfo.type === Array || reflectedType === Array;
+      options.property?.isArray ||
+      Array.isArray(options.property?.type) ||
+      options.property?.type === Array ||
+      reflectedType === Array;
 
     if (Array.isArray(type)) {
       type = type[0];
@@ -217,9 +223,11 @@ class MetadataStorageHostV1 {
     return {
       type: className,
       isArray: isArray,
-      required: typeInfo.required ?? true,
-      factory: typeInfo.factory,
-      enum: typeInfo.enum,
+      required: options.property?.required ?? true,
+      factory: !Array.isArray(options.transformer?.type)
+        ? options.transformer?.type
+        : options.transformer?.type[0],
+      enum: options.property?.enum,
     };
   }
 

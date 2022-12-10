@@ -1,50 +1,19 @@
-import { ApiProperty, ApiPropertyOptions } from '@nestjs/swagger';
-import {
-  Exclude,
-  ExcludeOptions,
-  Expose,
-  ExposeOptions,
-  Transform,
-  TransformFnParams,
-  TransformOptions,
-  TypeHelpOptions,
-  TypeOptions,
-} from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { _MetadataStorageV1 } from '../libs';
-import { TypeInfo } from '../types';
+import { PropOptions } from '../types';
 
-export function $Prop(
-  options: {
-    property?: ApiPropertyOptions;
-    transformer?: {
-      expose?: boolean | ExposeOptions;
-      exclude?: boolean | ExcludeOptions;
-      transform?: (
-        | {
-            fn: (params: TransformFnParams) => any;
-            options?: TransformOptions;
-          }
-        | ((params: TransformFnParams) => any)
-      )[];
-      type?:
-        | {
-            typeFunction?: (type?: TypeHelpOptions) => Function;
-            options?: TypeOptions;
-          }
-        | ((type?: TypeHelpOptions) => Function);
-    };
-    validator?: PropertyDecorator[];
-    metadata?: { [key: string]: any };
-  } = {},
-): PropertyDecorator {
+export function $Prop(options: PropOptions = {}): PropertyDecorator {
   return (target: any, property: any) => {
-    //_MetadataStorageV1.setPropInSchema(target, property, typeInfo);
-    /*
-    for (let key in metadata) {
-      _MetadataStorageV1.setMetadata(key, metadata[key], target, property);
+    // Add information to metadata storage
+    _MetadataStorageV1.setPropInSchema(target, property, options);
+
+    // Apply custom metadata
+    if (options.metadata !== undefined) {
+      for (let key in options.metadata) {
+        _MetadataStorageV1.setMetadata(key, options.metadata[key], target, property);
+      }
     }
-    */
-    // Apply other decorators
 
     // Apply swagger decorators
     ApiProperty(options.property)(target, property);
@@ -73,16 +42,33 @@ export function $Prop(
           if (typeof element === 'function') {
             Transform(element)(target, property);
           } else {
-            Transform(element.fn, element.options)(target, property);
+            Transform(element[0], element[1])(target, property);
           }
         });
+      }
+      // Type
+      if (options.transformer.type !== undefined) {
+        if (typeof options.transformer.type === 'function') {
+          Type(options.transformer.type)(target, property);
+        } else {
+          Type(options.transformer.type[0], options.transformer.type[1])(target, property);
+        }
       }
     }
 
     // Apply class validator decorators
     if (options?.validator) {
-      options.validator.forEach((element) => {
-        //
+      options.validator.forEach((ValidationDecorator) => {
+        if (ValidationDecorator(target, property) !== undefined) {
+          throw new Error(`
+            Invalid value detected in the validator config of property ${property} in schema ${
+            target.name ?? target.constructor.name
+          } => ${ValidationDecorator.name ?? ValidationDecorator.constructor.name}.
+            The value passed is not a valid decorator.
+            Remember make call over decorator function (add parenthesis).
+            For example, IsArray(). Warning to use IsArray without valid brackets.
+          `);
+        }
       });
     }
   };

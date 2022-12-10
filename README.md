@@ -8,34 +8,34 @@
 
 ```ts
 import { ApiProperty } from '@nestjs/swagger';
-import { _Schema, _Prop } from 'nestjs-metadata-storage';
+import { $Schema, $Prop } from 'nestjs-metadata-storage';
 
 export enum StatusEnum {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',
 }
 
-@_Schema()
+@$Schema()
 export class Dummy {
-  @_Prop()
+  @$Prop()
   _id: string;
 
-  @_Prop({ type: String, required: false })
+  @$Prop({ type: String, required: false })
   category: string | null;
 
-  @_Prop()
+  @$Prop()
   question: string;
 
-  @_Prop()
+  @$Prop()
   answer: string;
 
-  @_Prop({
+  @$Prop({
     type: 'StatusEnum',
     enum: StatusEnum,
   })
   status: StatusEnum;
 
-  @_Prop()
+  @$Prop()
   position: number;
 }
 ```
@@ -81,21 +81,21 @@ export class AppController {
 ### Type helpers for annotations on inheritance
 
 ```ts
-import { IntersectionType, PartialType, _Prop, _Schema } from 'nestjs-metadata-storage';
+import { IntersectionType, PartialType, $Prop, $Schema } from 'nestjs-metadata-storage';
 import { Faq } from './faq.dto';
 import { Plan } from './plan.dto';
 import { Payment } from './payment.dto';
 
-@_Schema({ metadata: 1 })
+@$Schema({ metadata: 1 })
 export class FaqExtended extends IntersectionType(Faq, Plan, PartialType(Payment)) {
-  @_Prop({ type: String, required: false })
+  @$Prop({ type: String, required: false })
   extra: string | null;
 }
 ```
 
 ## Notes
 
-- `_Schema` decorator is optional.
+- `$Schema` decorator is optional.
 - `@nestjs/swagger` is required.
 - `MetadataModule` is global module.
 - Please, override decorators for improve your code.
