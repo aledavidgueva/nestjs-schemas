@@ -61,7 +61,7 @@ export type PropertyOptions = {
       | [(type?: TypeHelpOptions) => Function, TypeOptions]
       | ((type?: TypeHelpOptions) => Function);
   };
-  validator?: PropertyDecorator[];
+  validators?: PropertyDecorator[];
   mongoose?: PropOptions;
   metadata?: { [key: string]: any };
   [group: string]: PropertyDecorator[] | any;

@@ -33,7 +33,7 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
             if (options.transformer.expose !== undefined) {
               if (options.transformer.expose === true) {
                 Expose()(target, property);
-              } else if (options.transformer.expose !== false) {
+              } else if (typeof options.transformer.expose === 'object') {
                 Expose(options.transformer.expose)(target, property);
               }
             }
@@ -41,7 +41,7 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
             if (options.transformer.exclude !== undefined) {
               if (options.transformer.exclude === true) {
                 Exclude()(target, property);
-              } else if (options.transformer.exclude !== false) {
+              } else if (typeof options.transformer.exclude === 'object') {
                 Exclude(options.transformer.exclude)(target, property);
               }
             }
@@ -65,13 +65,13 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
             }
           }
           break;
-        // Apply validator decorators
-        case 'validator':
-          if (options.validator !== undefined) {
-            options.validator.forEach((ValidationDecorator) => {
+        // Apply validators decorators
+        case 'validators':
+          if (options.validators !== undefined) {
+            options.validators.forEach((ValidationDecorator) => {
               if (ValidationDecorator(target, property) !== undefined) {
                 throw new Error(`
-                  Invalid value detected in the validator config of property ${property} in schema ${
+                  Invalid value detected in the validators config of property ${property} in schema ${
                   target.name ?? target.constructor.name
                 } => ${
                   ValidationDecorator.name ??
@@ -122,8 +122,8 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
     if (options?.transformer) {
     }
 
-    // Apply class validator decorators
-    if (options?.validator !== undefined) {
+    // Apply class validators decorators
+    if (options?.validators !== undefined) {
     }
 
     // Apply mongoose decorators
