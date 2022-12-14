@@ -112,25 +112,5 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
           break;
       }
     }
-
-    if (options.metadata !== undefined) {
-    }
-
-    // Apply swagger decorators
-
-    // Apply class transformer decorators
-    if (options?.transformer) {
-    }
-
-    // Apply class validators decorators
-    if (options?.validators !== undefined) {
-    }
-
-    // Apply mongoose decorators
-    if (options?.mongoose !== undefined) {
-    }
-
-    if (options?.decorators !== undefined) {
-    }
   };
 }

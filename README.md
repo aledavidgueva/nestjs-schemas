@@ -2,6 +2,7 @@
 
 - New storage for custom metadata for schemas and props types, with access available for dev by service.
 - Organize decorator annotations in your schemas for better handling and readability.
+- Reduce boilerplate.
 
 ## Usage
 

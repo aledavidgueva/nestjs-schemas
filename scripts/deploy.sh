@@ -6,4 +6,8 @@ if [ -z "$VERSION" ]; then
   read -p "Please, input version: " VERSION
 fi
 
-npm run build && npm version $VERSION && git push && git push --tags && npm publish --access=public
+npm run build
+npm version $VERSION
+git push
+git push --tags
+npm publish --access=public

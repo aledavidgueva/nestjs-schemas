@@ -2,7 +2,7 @@ import { Type } from '@nestjs/common';
 import { PickType as NestJSSwaggerPickType } from '@nestjs/swagger';
 import { _MetadataStorageV1 } from '../libs';
 
-export function PickType<T, K extends keyof T>(
+export function $PickType<T, K extends keyof T>(
   classRef: Type<T>,
   keys: readonly K[],
 ): Type<Pick<T, typeof keys[number]>> {
