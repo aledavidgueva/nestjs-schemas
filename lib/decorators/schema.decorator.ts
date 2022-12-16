@@ -7,10 +7,22 @@ export function $Schema(options: SchemaOptions = {}): ClassDecorator {
     // Add information to metadata storage
     _MetadataStorageV1.setSchema(target);
 
-    // Apply custom metadata
-    if (options.metadata !== undefined) {
-      for (let key in options.metadata) {
-        _MetadataStorageV1.setMetadata(key, options.metadata[key], target);
+    // Apply custom decorators
+    if (options.decorators !== undefined) {
+      for (let groupKey in options.decorators) {
+        const decorators = options.decorators[groupKey];
+        decorators.forEach((Decorator: ClassDecorator) => {
+          if (Decorator(target) !== undefined) {
+            throw new Error(`
+              Invalid value detected in the metadata config in schema ${
+                target.name ?? target.constructor.name
+              } => ${Decorator.name ?? Decorator.constructor.name ?? Decorator}.
+              The value passed is not a valid decorator.
+              Remember make call over decorator function (add parenthesis).
+              For example, CustomDecorator(). Warning to use CustomDecorator without valid brackets.
+            `);
+          }
+        });
       }
     }
 

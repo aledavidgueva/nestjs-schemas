@@ -12,11 +12,23 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
     // Apply decorators
     for (let group in options) {
       switch (group) {
-        // Apply metadata decorators
-        case 'metadata':
-          if (options.metadata !== undefined) {
-            for (let key in options.metadata) {
-              _MetadataStorageV1.setMetadata(key, options.metadata[key], target, property);
+        // Apply custom decorators
+        case 'decorators':
+          if (options.decorators !== undefined) {
+            for (let groupKey in options.decorators) {
+              const decorators = options.decorators[groupKey];
+              decorators.forEach((Decorator: PropertyDecorator) => {
+                if (Decorator(target, property) !== undefined) {
+                  throw new Error(`
+                    Invalid value detected in the decorators config of property ${property} in schema ${
+                    target.name ?? target.constructor.name
+                  } => ${Decorator.name ?? Decorator.constructor.name ?? Decorator}.
+                    The value passed is not a valid decorator.
+                    Remember make call over decorator function (add parenthesis).
+                    For example, CustomDecorator(). Warning to use CustomDecorator without valid brackets.
+                  `);
+                }
+              });
             }
           }
           break;
@@ -68,7 +80,8 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
         // Apply validators decorators
         case 'validators':
           if (options.validators !== undefined) {
-            options.validators.forEach((ValidationDecorator) => {
+            const validators = options.validators;
+            validators.forEach((ValidationDecorator) => {
               if (ValidationDecorator(target, property) !== undefined) {
                 throw new Error(`
                   Invalid value detected in the validators config of property ${property} in schema ${
@@ -90,24 +103,6 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
         case 'mongoose':
           if (options.mongoose !== undefined) {
             Prop(options.mongoose)(target, property);
-          }
-          break;
-        // Apply custom decorators
-        default:
-          const decorators = options[group] as PropertyDecorator[];
-          if (decorators !== undefined) {
-            decorators.forEach((Decorator: PropertyDecorator) => {
-              if (Decorator(target, property) !== undefined) {
-                throw new Error(`
-                  Invalid value detected in the decorators config of property ${property} in schema ${
-                  target.name ?? target.constructor.name
-                } => ${Decorator.name ?? Decorator.constructor.name ?? Decorator}.
-                  The value passed is not a valid decorator.
-                  Remember make call over decorator function (add parenthesis).
-                  For example, CustomDecorator(). Warning to use CustomDecorator without valid brackets.
-                `);
-              }
-            });
           }
           break;
       }

@@ -1,9 +1,7 @@
 import { _MetadataStorageV1 } from '../libs';
 
-export function $Metadata(metadata: { [key: string]: any }): PropertyDecorator {
+export function $Metadata<T = any>(key: string, value: T): PropertyDecorator {
   return (target: any, property?: any) => {
-    for (let key in metadata) {
-      _MetadataStorageV1.setMetadata(key, metadata[key], target, property);
-    }
+    _MetadataStorageV1.setMetadata<T>(key, value, target, property);
   };
 }

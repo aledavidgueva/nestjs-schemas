@@ -10,7 +10,6 @@ class MetadataStorageHostV1 {
 
   setSchema(
     schema: Function | Object, //
-    metadata: Map<string, any> = new Map(),
   ) {
     // check and get schema
     const schemaName = this._getName(schema);
@@ -22,7 +21,7 @@ class MetadataStorageHostV1 {
         factory: this._getFactory(schema),
         parent: parentName,
         props: new Map(),
-        metadata,
+        metadata: new Map(),
       });
 
       if (parentName) {
@@ -35,7 +34,6 @@ class MetadataStorageHostV1 {
     schema: Function | Object, //
     property: string,
     options: PropertyOptions = {},
-    metadata: Map<string, any> = new Map(),
   ) {
     // check and get schema
     this.setSchema(schema);
@@ -45,7 +43,7 @@ class MetadataStorageHostV1 {
     try {
       schemaDef.props.set(property, {
         type: this._objectTypeDetector(schema, property, options),
-        metadata,
+        metadata: new Map(),
         options: this._copyPropertyOptions(options),
       });
     } catch (err) {
@@ -53,9 +51,9 @@ class MetadataStorageHostV1 {
     }
   }
 
-  setMetadata(
+  setMetadata<T = any>(
     key: string,
-    value: any,
+    value: T,
     schema: Function | Object, //
     property?: string,
   ) {
@@ -127,11 +125,11 @@ class MetadataStorageHostV1 {
     return properties;
   }
 
-  getMetadata(
+  getMetadata<T = any>(
     key: string,
     schema: string | Function | Object, //
     property?: string,
-  ): any {
+  ): T | undefined {
     const schemaName = this._getName(schema);
     const schemaDef = this._schemas.get(schemaName);
     if (!schemaDef) {
@@ -146,7 +144,7 @@ class MetadataStorageHostV1 {
           `Error getting metadata: Property ${property} not found in schema ${schemaName}.`,
         );
       }
-      return propDef.metadata.get(key);
+      return propDef.metadata.get(key) as T | undefined;
     }
   }
 
@@ -194,8 +192,7 @@ class MetadataStorageHostV1 {
       mongoose: options.mongoose ? options.mongoose : undefined,
       swagger: options.swagger ? { ...options.swagger } : undefined,
       transformer: options.transformer ? { ...options.transformer } : undefined,
-      validator: options.validator ? [...options.validator] : undefined,
-      decorators: options.decorators ? [...options.decorators] : undefined,
+      validators: options.validators ? [...options.validators] : undefined,
     };
   }
 

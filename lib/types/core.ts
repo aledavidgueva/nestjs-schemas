@@ -45,7 +45,7 @@ export type MetadataModuleOptions = {
 
 export type SchemaOptions = {
   mongoose?: mongoose.SchemaOptions;
-  metadata?: { [key: string]: any };
+  decorators?: { [key: string]: ClassDecorator[] };
 };
 
 export type PropertyOptions = {
@@ -63,6 +63,5 @@ export type PropertyOptions = {
   };
   validators?: PropertyDecorator[];
   mongoose?: PropOptions;
-  metadata?: { [key: string]: any };
-  [group: string]: PropertyDecorator[] | any;
+  decorators?: { [key: string]: PropertyDecorator[] };
 };
