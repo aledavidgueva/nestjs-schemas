@@ -1,40 +1,62 @@
 import moment from 'moment';
+import { checkNullOrUndefinedString, CommonCastOptions } from './common';
 
-export type CastToDateOptions = {
-  default?: Date;
-  nullString?: boolean;
-  undefinedString?: boolean;
-  isArray?: boolean;
-};
+export type CastToDate = {};
+
+export type CastToDateOptions = CommonCastOptions &
+  CastToDate & {
+    default?: Date;
+  };
+
+export type CastToDateArrayOptions = CommonCastOptions &
+  CastToDate & {
+    default?: Date[];
+  };
 
 export function castToDate(value: any, options: CastToDateOptions = {}) {
-  if (typeof value === 'string') {
-    if (options.nullString && value.trim() === 'null') value = null;
-    if (options.undefinedString && value.trim() === 'undefined') value = undefined;
-  }
-
+  value = checkNullOrUndefinedString(value, options);
   let newValue: Date | null | undefined;
-  if (
-    (typeof value === 'object' && value instanceof Date) ||
-    value === null ||
-    value === undefined
-  ) {
+  if (newValue !== null && newValue !== undefined) {
+    try {
+      newValue = _castToDate(value, options);
+    } catch (_) {
+      newValue = options.default;
+    }
+  } else if (options.default !== undefined) {
+    newValue = options.default;
+  }
+  return newValue;
+}
+
+export function castToDateArray(value: any, options: CastToDateArrayOptions = {}) {
+  value = checkNullOrUndefinedString(value, options);
+  value = Array.isArray(value) ? value : undefined;
+  let newValue: Date[] | null | undefined;
+  if (value !== null && value !== undefined) {
+    try {
+      newValue = [];
+      for (let element of value) {
+        newValue.push(_castToDate(element, options));
+      }
+    } catch (_) {
+      newValue = options.default;
+    }
+  } else if (options.default !== undefined) {
+    newValue = options.default;
+  } else {
+    newValue = value;
+  }
+  return newValue;
+}
+
+function _castToDate(value: any, options: CastToDate = {}) {
+  let newValue: Date;
+  if (typeof value === 'object' && value instanceof Date) {
     newValue = value;
   } else {
-    try {
-      newValue = moment(value).toDate();
-    } catch (_) {
-      newValue = undefined;
-    }
+    newValue = moment(value).toDate();
+    if (typeof newValue !== 'object' || !(newValue instanceof Date))
+      throw new Error('Cast to date error');
   }
-
-  if (options.default && (typeof newValue !== 'object' || !(newValue instanceof Date))) {
-    return options.default;
-  }
-
-  /*   if (typeof value === 'object' && value instanceof Date) {
-    // Apply type transformation
-  } */
-
   return newValue;
 }
