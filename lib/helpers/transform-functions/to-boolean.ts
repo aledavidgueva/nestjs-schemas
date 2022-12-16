@@ -6,13 +6,13 @@ import {
   castToBooleanArray as castToBooleanArrayFn,
 } from '../cast';
 
-export function castToBoolean(options: CastToBooleanOptions = {}) {
+export function TransformToBoolean(options: CastToBooleanOptions = {}) {
   return (params: TransformFnParams) => {
     return castToBooleanFn(params.value, options);
   };
 }
 
-export function castToBooleanArray(options: CastToBooleanArrayOptions = {}) {
+export function TransformToBooleanArray(options: CastToBooleanArrayOptions = {}) {
   return (params: TransformFnParams) => {
     return castToBooleanArrayFn(params.value, options);
   };

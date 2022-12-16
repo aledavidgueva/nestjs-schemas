@@ -6,13 +6,13 @@ import {
   castToObjectIdArray as castToObjectIdArrayFn,
 } from '../cast';
 
-export function castToObjectId(options: CastToObjectIdOptions = {}) {
+export function TransformToObjectId(options: CastToObjectIdOptions = {}) {
   return (params: TransformFnParams) => {
     return castToObjectIdFn(params.value, options);
   };
 }
 
-export function castToObjectIdArray(options: CastToObjectIdArrayOptions = {}) {
+export function TransformToObjectIdArray(options: CastToObjectIdArrayOptions = {}) {
   return (params: TransformFnParams) => {
     return castToObjectIdArrayFn(params.value, options);
   };

@@ -6,13 +6,13 @@ import {
   castToNumberArray as castToNumberArrayFn,
 } from '../cast';
 
-export function castToNumber(options: CastToNumberOptions = {}) {
+export function TransformToNumber(options: CastToNumberOptions = {}) {
   return (params: TransformFnParams) => {
     return castToNumberFn(params.value, options);
   };
 }
 
-export function castToNumberArray(options: CastToNumberArrayOptions = {}) {
+export function TransformToNumberArray(options: CastToNumberArrayOptions = {}) {
   return (params: TransformFnParams) => {
     return castToNumberArrayFn(params.value, options);
   };

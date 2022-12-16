@@ -6,13 +6,13 @@ import {
   castToStringArray as castToStringArrayFn,
 } from '../cast';
 
-export function castToString(options: CastToStringOptions = {}) {
+export function TransformToString(options: CastToStringOptions = {}) {
   return (params: TransformFnParams) => {
     return castToStringFn(params.value, options);
   };
 }
 
-export function castToStringArray(options: CastToStringArrayOptions = {}) {
+export function TransformToStringArray(options: CastToStringArrayOptions = {}) {
   return (params: TransformFnParams) => {
     return castToStringArrayFn(params.value, options);
   };

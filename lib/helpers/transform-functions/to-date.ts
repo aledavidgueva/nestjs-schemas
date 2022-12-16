@@ -6,13 +6,13 @@ import {
   castToDateArray as castToDateArrayFn,
 } from '../cast';
 
-export function castToDate(options: CastToDateOptions = {}) {
+export function TransformToDate(options: CastToDateOptions = {}) {
   return (params: TransformFnParams) => {
     return castToDateFn(params.value, options);
   };
 }
 
-export function castToDateArray(options: CastToDateArrayOptions = {}) {
+export function TransformToDateArray(options: CastToDateArrayOptions = {}) {
   return (params: TransformFnParams) => {
     return castToDateArrayFn(params.value, options);
   };
