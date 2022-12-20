@@ -10,6 +10,8 @@ import {
   TypeOptions,
 } from 'class-transformer';
 
+export type Nullable<T> = T | null;
+
 export type PropType = {
   type: string;
   isArray: boolean;
@@ -65,3 +67,19 @@ export type PropertyOptions = {
   mongoose?: PropOptions;
   decorators?: { [key: string]: PropertyDecorator[] };
 };
+
+export type CommonPropOpts = {
+  isArray: boolean;
+  isOptional: boolean;
+};
+
+export type PropCommonOpts = Pick<
+  NonNullable<PropertyOptions['transformer']>,
+  'exclude' | 'transform'
+> &
+  Pick<PropertyOptions, 'validators'>;
+/* 
+  exclude?: true;
+  transform: Proper
+};
+ */

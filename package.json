@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "@types/node": "^16",
+    "@types/validator": "^13.7.10",
     "rimraf": "^3",
     "typescript": "^4"
   }

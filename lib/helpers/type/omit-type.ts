@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
 import { OmitType as NestJSSwaggerOmitType } from '@nestjs/swagger';
-import { _MetadataStorageV1 } from '../libs';
+import { _MetadataStorageV1 } from '../../libs';
 
 export function $OmitType<T, K extends keyof T>(
   classRef: Type<T>,
