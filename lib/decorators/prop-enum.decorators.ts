@@ -1,14 +1,6 @@
 import { Schema } from 'mongoose';
 import ValidatorJS from 'validator';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { $Prop } from './prop.decorator';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
 import {
@@ -18,30 +10,27 @@ import {
   TransformToStringArray,
 } from '../helpers';
 
-type PropStringCommonOpts = PropCommonOpts & {
-  minLenght?: number;
-  maxLenght?: number;
-  format?: string;
-  pattern?: RegExp;
+type PropEnumCommonOpts = PropCommonOpts & {
+  enum: any[] | Record<string, any>;
+  enumName: string;
   isUnique?: boolean;
-  isUrl?: boolean | ValidatorJS.IsURLOptions;
 };
 
-export type PropStringOpts = PropStringCommonOpts & CastToStringOptions;
-export type PropStringOptionalOpts = Omit<PropStringOpts, 'default'> & {
-  default: Nullable<Pick<PropStringOpts, 'default'>>;
+export type PropEnumOpts = PropEnumCommonOpts & CastToStringOptions;
+export type PropEnumOptionalOpts = Omit<PropEnumOpts, 'default'> & {
+  default: Nullable<Pick<PropEnumOpts, 'default'>>;
 };
-export type PropStringArrayOpts = PropStringCommonOpts & CastToStringArrayOptions;
-export type PropStringArrayOptionalOpts = Omit<PropStringArrayOpts, 'default'> & {
-  default: Nullable<Pick<PropStringOpts, 'default'>>;
+export type PropEnumArrayOpts = PropEnumCommonOpts & CastToStringArrayOptions;
+export type PropEnumArrayOptionalOpts = Omit<PropEnumArrayOpts, 'default'> & {
+  default: Nullable<Pick<PropEnumOpts, 'default'>>;
 };
 type SetPropOptions =
-  | PropStringOpts
-  | PropStringOptionalOpts
-  | PropStringArrayOpts
-  | PropStringArrayOptionalOpts;
+  | PropEnumOpts
+  | PropEnumOptionalOpts
+  | PropEnumArrayOpts
+  | PropEnumArrayOptionalOpts;
 
-export function $PropString(opts: PropStringOpts): PropertyDecorator {
+export function $PropEnum(opts: PropEnumOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -56,7 +45,7 @@ export function $PropString(opts: PropStringOpts): PropertyDecorator {
   };
 }
 
-export function $PropStringArray(opts: PropStringArrayOpts): PropertyDecorator {
+export function $PropEnumArray(opts: PropEnumArrayOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -71,7 +60,7 @@ export function $PropStringArray(opts: PropStringArrayOpts): PropertyDecorator {
   };
 }
 
-export function $PropStringOptional(opts: PropStringOptionalOpts): PropertyDecorator {
+export function $PropEnumOptional(opts: PropEnumOptionalOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -85,7 +74,7 @@ export function $PropStringOptional(opts: PropStringOptionalOpts): PropertyDecor
   };
 }
 
-export function $PropStringArrayOptional(opts: PropStringArrayOptionalOpts): PropertyDecorator {
+export function $PropEnumArrayOptional(opts: PropEnumArrayOptionalOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -104,21 +93,18 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   const prop: PropertyOptions = {
     swagger: {
       type: 'string',
-      format: opts.format,
-      pattern: opts.pattern ? opts.pattern.toString() : undefined,
-      maxLength: opts.maxLenght,
-      minLength: opts.minLenght,
+      enum: opts.enum,
+      enumName: opts.enumName,
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
     },
     mongoose: {
       type: !opts.isArray ? Schema.Types.String : [Schema.Types.String],
+      enum: !opts.isOptional ? Object.values(opts.enum) : [...Object.values(opts.enum), null],
       required: !opts.isOptional,
       default: opts.default,
       unique: opts.isUnique,
-      minlength: opts.minLenght,
-      maxlength: opts.maxLenght,
     },
     transformer: {
       expose: opts.exclude === true ? false : true,
@@ -138,7 +124,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
     trim: opts.trim ?? true,
   };
 
-  if (!opts.isArray) {
+  /*   if (!opts.isArray) {
     prop.transformer?.transform?.push([
       TransformToString(transformToTypeOpts),
       { toClassOnly: true },
@@ -149,6 +135,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       { toClassOnly: true },
     ]);
   }
+ */
 
   // User custom transform chain fn
   if (opts.transform !== undefined) {
@@ -166,18 +153,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
 
   // Type validation
   if (opts.isArray) prop.validators!.push(IsArray());
-  prop.validators!.push(IsString({ each: opts.isArray }));
-
-  // Lenght validation
-  if (opts.minLenght !== undefined)
-    prop.validators!.push(MinLength(opts.minLenght, { each: opts.isArray }));
-  if (opts.maxLenght !== undefined)
-    prop.validators!.push(MaxLength(opts.maxLenght, { each: opts.isArray }));
-
-  // Format validation
-  if (opts.isUrl !== undefined && opts.isUrl !== false) {
-    prop.validators!.push(opts.isUrl === true ? IsUrl() : IsUrl(opts.isUrl));
-  }
+  prop.validators!.push(IsEnum({ each: opts.isArray }));
 
   // Other validations
   if (opts.validators !== undefined) {

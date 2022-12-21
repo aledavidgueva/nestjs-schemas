@@ -77,7 +77,9 @@ export type PropCommonOpts = Pick<
   NonNullable<PropertyOptions['transformer']>,
   'exclude' | 'transform'
 > &
-  Pick<PropertyOptions, 'validators'>;
+  Pick<PropertyOptions, 'validators'> & {
+    transform: 'toClassOnly' | 'toPlainOnly' | 'both';
+  };
 /* 
   exclude?: true;
   transform: Proper

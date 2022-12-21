@@ -1,47 +1,31 @@
 import { Schema } from 'mongoose';
-import ValidatorJS from 'validator';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 import { $Prop } from './prop.decorator';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
 import {
-  CastToStringArrayOptions,
-  CastToStringOptions,
-  TransformToString,
-  TransformToStringArray,
+  CastToBooleanArrayOptions,
+  CastToBooleanOptions,
+  TransformToBoolean,
+  TransformToBooleanArray,
 } from '../helpers';
 
-type PropStringCommonOpts = PropCommonOpts & {
-  minLenght?: number;
-  maxLenght?: number;
-  format?: string;
-  pattern?: RegExp;
-  isUnique?: boolean;
-  isUrl?: boolean | ValidatorJS.IsURLOptions;
-};
+type PropBooleanCommonOpts = PropCommonOpts & {};
 
-export type PropStringOpts = PropStringCommonOpts & CastToStringOptions;
-export type PropStringOptionalOpts = Omit<PropStringOpts, 'default'> & {
-  default: Nullable<Pick<PropStringOpts, 'default'>>;
+export type PropBooleanOpts = PropBooleanCommonOpts & CastToBooleanOptions;
+export type PropBooleanOptionalOpts = Omit<PropBooleanOpts, 'default'> & {
+  default: Nullable<Pick<PropBooleanOpts, 'default'>>;
 };
-export type PropStringArrayOpts = PropStringCommonOpts & CastToStringArrayOptions;
-export type PropStringArrayOptionalOpts = Omit<PropStringArrayOpts, 'default'> & {
-  default: Nullable<Pick<PropStringOpts, 'default'>>;
+export type PropBooleanArrayOpts = PropBooleanCommonOpts & CastToBooleanArrayOptions;
+export type PropBooleanArrayOptionalOpts = Omit<PropBooleanArrayOpts, 'default'> & {
+  default: Nullable<Pick<PropBooleanOpts, 'default'>>;
 };
 type SetPropOptions =
-  | PropStringOpts
-  | PropStringOptionalOpts
-  | PropStringArrayOpts
-  | PropStringArrayOptionalOpts;
+  | PropBooleanOpts
+  | PropBooleanOptionalOpts
+  | PropBooleanArrayOpts
+  | PropBooleanArrayOptionalOpts;
 
-export function $PropString(opts: PropStringOpts): PropertyDecorator {
+export function $PropBoolean(opts: PropBooleanOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -56,7 +40,7 @@ export function $PropString(opts: PropStringOpts): PropertyDecorator {
   };
 }
 
-export function $PropStringArray(opts: PropStringArrayOpts): PropertyDecorator {
+export function $PropBooleanArray(opts: PropBooleanArrayOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -71,7 +55,7 @@ export function $PropStringArray(opts: PropStringArrayOpts): PropertyDecorator {
   };
 }
 
-export function $PropStringOptional(opts: PropStringOptionalOpts): PropertyDecorator {
+export function $PropBooleanOptional(opts: PropBooleanOptionalOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -85,7 +69,7 @@ export function $PropStringOptional(opts: PropStringOptionalOpts): PropertyDecor
   };
 }
 
-export function $PropStringArrayOptional(opts: PropStringArrayOptionalOpts): PropertyDecorator {
+export function $PropBooleanArrayOptional(opts: PropBooleanArrayOptionalOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -103,49 +87,45 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   // Init final opts
   const prop: PropertyOptions = {
     swagger: {
-      type: 'string',
-      format: opts.format,
-      pattern: opts.pattern ? opts.pattern.toString() : undefined,
-      maxLength: opts.maxLenght,
-      minLength: opts.minLenght,
+      type: 'boolean',
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
     },
     mongoose: {
-      type: !opts.isArray ? Schema.Types.String : [Schema.Types.String],
+      type: !opts.isArray ? Schema.Types.Boolean : [Schema.Types.Boolean],
       required: !opts.isOptional,
       default: opts.default,
-      unique: opts.isUnique,
-      minlength: opts.minLenght,
-      maxlength: opts.maxLenght,
     },
     transformer: {
       expose: opts.exclude === true ? false : true,
       exclude: opts.exclude === true ? true : undefined,
-      type: () => String,
+      type: () => Boolean,
       transform: [],
     },
     validators: [],
   };
 
   // Set transform functions
-  const transformToTypeOpts = {
-    default: <any>(<unknown>opts.default),
+  const transformToTypeOpts: CastToBooleanOptions = {
     nullString: opts.nullString,
     undefinedString: opts.undefinedString,
-    case: opts.case,
-    trim: opts.trim ?? true,
   };
 
   if (!opts.isArray) {
     prop.transformer?.transform?.push([
-      TransformToString(transformToTypeOpts),
+      TransformToBoolean({
+        ...transformToTypeOpts,
+        default: <any>(<unknown>opts.default),
+      }),
       { toClassOnly: true },
     ]);
   } else {
     prop.transformer?.transform?.push([
-      TransformToStringArray(transformToTypeOpts),
+      TransformToBooleanArray({
+        ...transformToTypeOpts,
+        default: <any>(<unknown>opts.default),
+      }),
       { toClassOnly: true },
     ]);
   }
@@ -166,18 +146,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
 
   // Type validation
   if (opts.isArray) prop.validators!.push(IsArray());
-  prop.validators!.push(IsString({ each: opts.isArray }));
-
-  // Lenght validation
-  if (opts.minLenght !== undefined)
-    prop.validators!.push(MinLength(opts.minLenght, { each: opts.isArray }));
-  if (opts.maxLenght !== undefined)
-    prop.validators!.push(MaxLength(opts.maxLenght, { each: opts.isArray }));
-
-  // Format validation
-  if (opts.isUrl !== undefined && opts.isUrl !== false) {
-    prop.validators!.push(opts.isUrl === true ? IsUrl() : IsUrl(opts.isUrl));
-  }
+  prop.validators!.push(IsBoolean({ each: opts.isArray }));
 
   // Other validations
   if (opts.validators !== undefined) {

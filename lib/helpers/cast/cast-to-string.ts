@@ -57,7 +57,11 @@ function _castToString(value: any, options: CastToString = {}) {
   if (typeof value === 'string') {
     newValue = value;
   } else {
-    newValue = String(value);
+    if (typeof value['toString'] === 'function') {
+      newValue = value.toString();
+    } else {
+      newValue = String(value);
+    }
   }
 
   // Apply type transformation
