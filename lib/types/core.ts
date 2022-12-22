@@ -12,6 +12,8 @@ import {
 
 export type Nullable<T> = T | null;
 
+export type ObjectId = mongoose.Types.ObjectId;
+
 export type PropType = {
   type: string;
   isArray: boolean;
@@ -78,10 +80,5 @@ export type PropCommonOpts = Pick<
   'exclude' | 'transform'
 > &
   Pick<PropertyOptions, 'validators'> & {
-    transform: 'toClassOnly' | 'toPlainOnly' | 'both';
+    transform?: 'toClassOnly' | 'toPlainOnly' | 'both';
   };
-/* 
-  exclude?: true;
-  transform: Proper
-};
- */

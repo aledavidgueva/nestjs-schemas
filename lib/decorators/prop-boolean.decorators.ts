@@ -13,11 +13,11 @@ type PropBooleanCommonOpts = PropCommonOpts & {};
 
 export type PropBooleanOpts = PropBooleanCommonOpts & CastToBooleanOptions;
 export type PropBooleanOptionalOpts = Omit<PropBooleanOpts, 'default'> & {
-  default: Nullable<Pick<PropBooleanOpts, 'default'>>;
+  default?: Nullable<PropBooleanOpts['default']>;
 };
 export type PropBooleanArrayOpts = PropBooleanCommonOpts & CastToBooleanArrayOptions;
 export type PropBooleanArrayOptionalOpts = Omit<PropBooleanArrayOpts, 'default'> & {
-  default: Nullable<Pick<PropBooleanOpts, 'default'>>;
+  default?: Nullable<PropBooleanOpts['default']>;
 };
 type SetPropOptions =
   | PropBooleanOpts
@@ -25,7 +25,7 @@ type SetPropOptions =
   | PropBooleanArrayOpts
   | PropBooleanArrayOptionalOpts;
 
-export function $PropBoolean(opts: PropBooleanOpts): PropertyDecorator {
+export function $PropBoolean(opts: PropBooleanOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -40,7 +40,7 @@ export function $PropBoolean(opts: PropBooleanOpts): PropertyDecorator {
   };
 }
 
-export function $PropBooleanArray(opts: PropBooleanArrayOpts): PropertyDecorator {
+export function $PropBooleanArray(opts: PropBooleanArrayOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -55,7 +55,7 @@ export function $PropBooleanArray(opts: PropBooleanArrayOpts): PropertyDecorator
   };
 }
 
-export function $PropBooleanOptional(opts: PropBooleanOptionalOpts): PropertyDecorator {
+export function $PropBooleanOptional(opts: PropBooleanOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -69,7 +69,9 @@ export function $PropBooleanOptional(opts: PropBooleanOptionalOpts): PropertyDec
   };
 }
 
-export function $PropBooleanArrayOptional(opts: PropBooleanArrayOptionalOpts): PropertyDecorator {
+export function $PropBooleanArrayOptional(
+  opts: PropBooleanArrayOptionalOpts = {},
+): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {

@@ -1,14 +1,8 @@
 import { Schema } from 'mongoose';
-import ValidatorJS from 'validator';
 import { IsArray, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { $Prop } from './prop.decorator';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
-import {
-  CastToStringArrayOptions,
-  CastToStringOptions,
-  TransformToString,
-  TransformToStringArray,
-} from '../helpers';
+import { CastToStringArrayOptions, CastToStringOptions } from '../helpers';
 
 type PropEnumCommonOpts = PropCommonOpts & {
   enum: any[] | Record<string, any>;
@@ -18,11 +12,11 @@ type PropEnumCommonOpts = PropCommonOpts & {
 
 export type PropEnumOpts = PropEnumCommonOpts & CastToStringOptions;
 export type PropEnumOptionalOpts = Omit<PropEnumOpts, 'default'> & {
-  default: Nullable<Pick<PropEnumOpts, 'default'>>;
+  default?: Nullable<PropEnumOpts['default']>;
 };
 export type PropEnumArrayOpts = PropEnumCommonOpts & CastToStringArrayOptions;
 export type PropEnumArrayOptionalOpts = Omit<PropEnumArrayOpts, 'default'> & {
-  default: Nullable<Pick<PropEnumOpts, 'default'>>;
+  default?: Nullable<PropEnumOpts['default']>;
 };
 type SetPropOptions =
   | PropEnumOpts

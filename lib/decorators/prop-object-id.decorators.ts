@@ -20,11 +20,11 @@ type PropObjectIdCommonOpts = PropCommonOpts & {
 
 export type PropObjectIdOpts = PropObjectIdCommonOpts & CastToObjectIdOptions;
 export type PropObjectIdOptionalOpts = Omit<PropObjectIdOpts, 'default'> & {
-  default: Nullable<Pick<PropObjectIdOpts, 'default'>>;
+  default?: Nullable<PropObjectIdOpts['default']>;
 };
 export type PropObjectIdArrayOpts = PropObjectIdCommonOpts & CastToObjectIdArrayOptions;
 export type PropObjectIdArrayOptionalOpts = Omit<PropObjectIdArrayOpts, 'default'> & {
-  default: Nullable<Pick<PropObjectIdOpts, 'default'>>;
+  default?: Nullable<PropObjectIdOpts['default']>;
 };
 type SetPropOptions =
   | PropObjectIdOpts
@@ -32,7 +32,7 @@ type SetPropOptions =
   | PropObjectIdArrayOpts
   | PropObjectIdArrayOptionalOpts;
 
-export function $PropObjectId(opts: PropObjectIdOpts): PropertyDecorator {
+export function $PropObjectId(opts: PropObjectIdOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -47,7 +47,7 @@ export function $PropObjectId(opts: PropObjectIdOpts): PropertyDecorator {
   };
 }
 
-export function $PropObjectIdArray(opts: PropObjectIdArrayOpts): PropertyDecorator {
+export function $PropObjectIdArray(opts: PropObjectIdArrayOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -62,7 +62,7 @@ export function $PropObjectIdArray(opts: PropObjectIdArrayOpts): PropertyDecorat
   };
 }
 
-export function $PropObjectIdOptional(opts: PropObjectIdOptionalOpts): PropertyDecorator {
+export function $PropObjectIdOptional(opts: PropObjectIdOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -76,7 +76,9 @@ export function $PropObjectIdOptional(opts: PropObjectIdOptionalOpts): PropertyD
   };
 }
 
-export function $PropObjectIdArrayOptional(opts: PropObjectIdArrayOptionalOpts): PropertyDecorator {
+export function $PropObjectIdArrayOptional(
+  opts: PropObjectIdArrayOptionalOpts = {},
+): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {

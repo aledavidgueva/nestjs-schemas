@@ -8,3 +8,5 @@ export * from './prop-object-id.decorators';
 export * from './prop-enum.decorators';
 export * from './prop-boolean.decorators';
 export * from './prop-date.decorators';
+export * from './prop-sub-schema.decorators';
+export * from './prop-instance.decorators';

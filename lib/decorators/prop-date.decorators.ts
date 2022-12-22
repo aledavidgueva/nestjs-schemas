@@ -17,11 +17,11 @@ type PropDateCommonOpts = PropCommonOpts & {
 
 export type PropDateOpts = PropDateCommonOpts & CastToDateOptions;
 export type PropDateOptionalOpts = Omit<PropDateOpts, 'default'> & {
-  default: Nullable<Pick<PropDateOpts, 'default'>>;
+  default?: Nullable<PropDateOpts['default']>;
 };
 export type PropDateArrayOpts = PropDateCommonOpts & CastToDateArrayOptions;
 export type PropDateArrayOptionalOpts = Omit<PropDateArrayOpts, 'default'> & {
-  default: Nullable<Pick<PropDateOpts, 'default'>>;
+  default?: Nullable<PropDateOpts['default']>;
 };
 type SetPropOptions =
   | PropDateOpts
@@ -29,7 +29,7 @@ type SetPropOptions =
   | PropDateArrayOpts
   | PropDateArrayOptionalOpts;
 
-export function $PropDate(opts: PropDateOpts): PropertyDecorator {
+export function $PropDate(opts: PropDateOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -44,7 +44,7 @@ export function $PropDate(opts: PropDateOpts): PropertyDecorator {
   };
 }
 
-export function $PropDateArray(opts: PropDateArrayOpts): PropertyDecorator {
+export function $PropDateArray(opts: PropDateArrayOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -59,7 +59,7 @@ export function $PropDateArray(opts: PropDateArrayOpts): PropertyDecorator {
   };
 }
 
-export function $PropDateOptional(opts: PropDateOptionalOpts): PropertyDecorator {
+export function $PropDateOptional(opts: PropDateOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -73,7 +73,7 @@ export function $PropDateOptional(opts: PropDateOptionalOpts): PropertyDecorator
   };
 }
 
-export function $PropDateArrayOptional(opts: PropDateArrayOptionalOpts): PropertyDecorator {
+export function $PropDateArrayOptional(opts: PropDateArrayOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {

@@ -29,11 +29,11 @@ type PropNumberCommonOpts = PropCommonOpts & {
 
 export type PropNumberOpts = PropNumberCommonOpts & CastToNumberOptions;
 export type PropNumberOptionalOpts = Omit<PropNumberOpts, 'default'> & {
-  default: Nullable<Pick<PropNumberOpts, 'default'>>;
+  default?: Nullable<PropNumberOpts['default']>;
 };
 export type PropNumberArrayOpts = PropNumberCommonOpts & CastToNumberArrayOptions;
 export type PropNumberArrayOptionalOpts = Omit<PropNumberArrayOpts, 'default'> & {
-  default: Nullable<Pick<PropNumberOpts, 'default'>>;
+  default?: Nullable<PropNumberOpts['default']>;
 };
 type SetPropOptions =
   | PropNumberOpts
@@ -41,7 +41,7 @@ type SetPropOptions =
   | PropNumberArrayOpts
   | PropNumberArrayOptionalOpts;
 
-export function $PropNumber(opts: PropNumberOpts): PropertyDecorator {
+export function $PropNumber(opts: PropNumberOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -56,7 +56,7 @@ export function $PropNumber(opts: PropNumberOpts): PropertyDecorator {
   };
 }
 
-export function $PropNumberArray(opts: PropNumberArrayOpts): PropertyDecorator {
+export function $PropNumberArray(opts: PropNumberArrayOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -71,7 +71,7 @@ export function $PropNumberArray(opts: PropNumberArrayOpts): PropertyDecorator {
   };
 }
 
-export function $PropNumberOptional(opts: PropNumberOptionalOpts): PropertyDecorator {
+export function $PropNumberOptional(opts: PropNumberOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -85,7 +85,9 @@ export function $PropNumberOptional(opts: PropNumberOptionalOpts): PropertyDecor
   };
 }
 
-export function $PropNumberArrayOptional(opts: PropNumberArrayOptionalOpts): PropertyDecorator {
+export function $PropNumberArrayOptional(
+  opts: PropNumberArrayOptionalOpts = {},
+): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {

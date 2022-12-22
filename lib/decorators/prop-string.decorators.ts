@@ -29,11 +29,11 @@ type PropStringCommonOpts = PropCommonOpts & {
 
 export type PropStringOpts = PropStringCommonOpts & CastToStringOptions;
 export type PropStringOptionalOpts = Omit<PropStringOpts, 'default'> & {
-  default: Nullable<Pick<PropStringOpts, 'default'>>;
+  default?: Nullable<PropStringOpts['default']>;
 };
 export type PropStringArrayOpts = PropStringCommonOpts & CastToStringArrayOptions;
 export type PropStringArrayOptionalOpts = Omit<PropStringArrayOpts, 'default'> & {
-  default: Nullable<Pick<PropStringOpts, 'default'>>;
+  default?: Nullable<PropStringOpts['default']>;
 };
 type SetPropOptions =
   | PropStringOpts
@@ -41,7 +41,7 @@ type SetPropOptions =
   | PropStringArrayOpts
   | PropStringArrayOptionalOpts;
 
-export function $PropString(opts: PropStringOpts): PropertyDecorator {
+export function $PropString(opts: PropStringOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -56,7 +56,7 @@ export function $PropString(opts: PropStringOpts): PropertyDecorator {
   };
 }
 
-export function $PropStringArray(opts: PropStringArrayOpts): PropertyDecorator {
+export function $PropStringArray(opts: PropStringArrayOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -71,7 +71,7 @@ export function $PropStringArray(opts: PropStringArrayOpts): PropertyDecorator {
   };
 }
 
-export function $PropStringOptional(opts: PropStringOptionalOpts): PropertyDecorator {
+export function $PropStringOptional(opts: PropStringOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -85,7 +85,9 @@ export function $PropStringOptional(opts: PropStringOptionalOpts): PropertyDecor
   };
 }
 
-export function $PropStringArrayOptional(opts: PropStringArrayOptionalOpts): PropertyDecorator {
+export function $PropStringArrayOptional(
+  opts: PropStringArrayOptionalOpts = {},
+): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
