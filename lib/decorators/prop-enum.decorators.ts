@@ -8,7 +8,7 @@ import { ApiHideProperty } from '@nestjs/swagger';
 type PropEnumCommonOpts = PropCommonOpts & {
   enum: any[] | Record<string, any>;
   enumName: string;
-  isUnique?: boolean;
+  unique?: boolean;
 };
 
 export type PropEnumOpts = PropEnumCommonOpts & CastToStringOptions;
@@ -102,7 +102,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       enum: !opts.isOptional ? Object.values(opts.enum) : [...Object.values(opts.enum), null],
       required: !opts.isOptional,
       default: opts.default,
-      unique: opts.isUnique,
+      unique: opts.unique,
     },
     transformer: {
       expose: opts.exclude === true || opts.private === true ? false : true,

@@ -24,7 +24,7 @@ type PropStringCommonOpts = PropCommonOpts & {
   maxLenght?: number;
   format?: string;
   pattern?: RegExp;
-  isUnique?: boolean;
+  unique?: boolean;
   isUrl?: boolean | ValidatorJS.IsURLOptions;
 };
 
@@ -122,7 +122,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       type: !opts.isArray ? Schema.Types.String : [Schema.Types.String],
       required: !opts.isOptional,
       default: opts.default,
-      unique: opts.isUnique,
+      unique: opts.unique,
       minlength: opts.minLenght,
       maxlength: opts.maxLenght,
     },

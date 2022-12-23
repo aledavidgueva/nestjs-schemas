@@ -13,7 +13,7 @@ import { ApiHideProperty } from '@nestjs/swagger';
 type PropDateCommonOpts = PropCommonOpts & {
   minDate?: Date;
   maxDate?: Date;
-  isUnique?: boolean;
+  unique?: boolean;
 };
 
 export type PropDateOpts = PropDateCommonOpts & CastToDateOptions;
@@ -105,7 +105,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       type: !opts.isArray ? Schema.Types.Date : [Schema.Types.Date],
       required: !opts.isOptional,
       default: opts.default,
-      unique: opts.isUnique,
+      unique: opts.unique,
     },
     transformer: {
       expose: opts.exclude === true || opts.private === true ? false : true,

@@ -25,7 +25,7 @@ type PropNumberCommonOpts = PropCommonOpts & {
   max?: number;
   isInt?: boolean;
   isPositive?: boolean;
-  isUnique?: boolean;
+  unique?: boolean;
 } & IsNumberOptions;
 
 export type PropNumberOpts = PropNumberCommonOpts & CastToNumberOptions;
@@ -120,7 +120,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       type: !opts.isArray ? Schema.Types.Number : [Schema.Types.Number],
       required: !opts.isOptional,
       default: opts.default,
-      unique: opts.isUnique,
+      unique: opts.unique,
       max: opts.max,
       min: opts.min,
     },

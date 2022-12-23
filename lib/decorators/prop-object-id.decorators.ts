@@ -16,7 +16,7 @@ import { ApiHideProperty } from '@nestjs/swagger';
 type PropObjectIdCommonOpts = PropCommonOpts & {
   ref?: string;
   mustExists?: boolean;
-  isUnique?: boolean;
+  unique?: boolean;
 };
 
 export type PropObjectIdOpts = PropObjectIdCommonOpts & CastToObjectIdOptions;
@@ -111,7 +111,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       type: !opts.isArray ? Schema.Types.ObjectId : [Schema.Types.ObjectId],
       required: !opts.isOptional,
       default: opts.default,
-      unique: opts.isUnique,
+      unique: opts.unique,
     },
     transformer: {
       expose: opts.exclude === true || opts.private === true ? false : true,
