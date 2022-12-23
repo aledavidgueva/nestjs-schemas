@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
 import { PartialType as NestJSSwaggerPartialType } from '@nestjs/swagger';
-import { _MetadataStorageV1 } from '../../libs';
+import { _MetadataStorageV1 } from '../../libs/storage';
 
 export function $PartialType<T>(classRef: Type<T>): Type<Partial<T>> {
   const resultClass = NestJSSwaggerPartialType(classRef);

@@ -1,5 +1,5 @@
 import { Schema } from '@nestjs/mongoose';
-import { _MetadataStorageV1 } from '../libs';
+import { _MetadataStorageV1 } from '../libs/storage';
 import { SchemaOptions } from '../types';
 
 export function $Schema(options: SchemaOptions = {}): ClassDecorator {

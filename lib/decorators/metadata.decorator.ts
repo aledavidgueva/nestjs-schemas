@@ -1,4 +1,4 @@
-import { _MetadataStorageV1 } from '../libs';
+import { _MetadataStorageV1 } from '../libs/storage';
 
 export function $Metadata<T = any>(key: string, value: T): PropertyDecorator {
   return (target: any, property?: any) => {

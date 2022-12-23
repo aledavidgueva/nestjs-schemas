@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
 import { IntersectionType as NestJSSwaggerIntersectionType } from '@nestjs/swagger';
-import { _MetadataStorageV1 } from '../../libs';
+import { _MetadataStorageV1 } from '../../libs/storage';
 
 export function $IntersectionType<A, B>(classARef: Type<A>, classBRef: Type<B>): Type<A & B>;
 export function $IntersectionType<A, B, C>(

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { _MetadataStorageV1 } from './libs';
+import { _MetadataStorageV1 } from './libs/storage';
 
 @Injectable()
 export class MetadataService {
