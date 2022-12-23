@@ -107,19 +107,16 @@ export function $PropStringArrayOptional(
 function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: any) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger:
-      opts.private === true
-        ? undefined
-        : {
-            type: 'string',
-            format: opts.format,
-            pattern: opts.pattern ? opts.pattern.toString() : undefined,
-            maxLength: opts.maxLenght,
-            minLength: opts.minLenght,
-            nullable: opts.isOptional,
-            default: opts.default,
-            required: !opts.isOptional,
-          },
+    swagger: {
+      type: 'string',
+      format: opts.format,
+      pattern: opts.pattern ? opts.pattern.toString() : undefined,
+      maxLength: opts.maxLenght,
+      minLength: opts.minLenght,
+      nullable: opts.isOptional,
+      default: opts.default,
+      required: !opts.isOptional,
+    },
     mongoose: {
       type: !opts.isArray ? Schema.Types.String : [Schema.Types.String],
       required: !opts.isOptional,

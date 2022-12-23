@@ -96,17 +96,14 @@ export function $PropObjectIdArrayOptional(
 function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: any) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger:
-      opts.private === true
-        ? undefined
-        : {
-            type: 'string',
-            format: '24-digit hex string',
-            example: opts.isArray ? ['62d5b896b81490f4f66ae1cf'] : '62d5b896b81490f4f66ae1cf',
-            nullable: opts.isOptional,
-            default: opts.default,
-            required: !opts.isOptional,
-          },
+    swagger: {
+      type: 'string',
+      format: '24-digit hex string',
+      example: opts.isArray ? ['62d5b896b81490f4f66ae1cf'] : '62d5b896b81490f4f66ae1cf',
+      nullable: opts.isOptional,
+      default: opts.default,
+      required: !opts.isOptional,
+    },
     mongoose: {
       type: !opts.isArray ? Schema.Types.ObjectId : [Schema.Types.ObjectId],
       required: !opts.isOptional,

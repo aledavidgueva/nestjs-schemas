@@ -107,16 +107,13 @@ function setProp<T>(
 ) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger:
-      opts.private === true
-        ? undefined
-        : {
-            type: 'object',
-            name: type.name,
-            nullable: opts.isOptional,
-            default: opts.default,
-            required: !opts.isOptional,
-          },
+    swagger: {
+      type: 'object',
+      name: type.name,
+      nullable: opts.isOptional,
+      default: opts.default,
+      required: !opts.isOptional,
+    },
     mongoose: {
       type: !opts.isArray ? type : [type],
       required: !opts.isOptional,

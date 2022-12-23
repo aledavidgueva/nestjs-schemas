@@ -53,7 +53,7 @@ export type SchemaOptions = {
 };
 
 export type PropertyOptions = {
-  swagger?: ApiPropertyOptions & { hidden?: boolean };
+  swagger?: ApiPropertyOptions;
   transformer?: {
     expose?: boolean | ExposeOptions;
     exclude?: boolean | ExcludeOptions;

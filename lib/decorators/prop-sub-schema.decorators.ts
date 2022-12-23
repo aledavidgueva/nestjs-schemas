@@ -4,7 +4,6 @@ import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../ty
 import { ClassConstructor } from 'class-transformer';
 import { $Metadata } from './metadata.decorator';
 import { METADATA } from '../constants/metadata.const';
-import { ApiHideProperty } from '@nestjs/swagger';
 
 type PropSubSchemaCommonOpts = PropCommonOpts & {
   lookup: LookupOpts;
@@ -117,16 +116,13 @@ function setProp<T>(
 ) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger:
-      opts.private === true
-        ? undefined
-        : {
-            type: 'object',
-            name: subSchema.name,
-            nullable: opts.isOptional,
-            default: opts.default,
-            required: !opts.isOptional,
-          },
+    swagger: {
+      type: 'object',
+      name: subSchema.name,
+      nullable: opts.isOptional,
+      default: opts.default,
+      required: !opts.isOptional,
+    },
     mongoose: {
       type: !opts.isArray ? subSchema : [subSchema],
       required: !opts.isOptional,

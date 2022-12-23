@@ -35,11 +35,7 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
         // Apply swagger decorators
         case 'swagger':
           if (options.swagger !== undefined) {
-            if (!options.swagger.hidden) {
-              ApiProperty(options.swagger)(target, property);
-            } else {
-              ApiHideProperty()(target, property);
-            }
+            ApiProperty(options.swagger)(target, property);
           }
           break;
         // Apply transformer decorators

@@ -90,16 +90,13 @@ export function $PropDateArrayOptional(opts: PropDateArrayOptionalOpts = {}): Pr
 function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: any) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger:
-      opts.private === true
-        ? undefined
-        : {
-            type: 'string',
-            format: 'date-time',
-            nullable: opts.isOptional,
-            default: opts.default,
-            required: !opts.isOptional,
-          },
+    swagger: {
+      type: 'string',
+      format: 'date-time',
+      nullable: opts.isOptional,
+      default: opts.default,
+      required: !opts.isOptional,
+    },
     mongoose: {
       type: !opts.isArray ? Schema.Types.Date : [Schema.Types.Date],
       required: !opts.isOptional,
