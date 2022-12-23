@@ -93,6 +93,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
+      hidden: opts.private,
     },
     mongoose: {
       type: !opts.isArray ? Schema.Types.Boolean : [Schema.Types.Boolean],

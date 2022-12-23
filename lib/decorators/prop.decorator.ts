@@ -1,7 +1,7 @@
 import { Prop } from '@nestjs/mongoose';
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
-import { _MetadataStorageV1 } from '../libs';
+import { _MetadataStorageV1 } from '../libs/storage';
 import { PropertyOptions } from '../types';
 
 export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
@@ -35,7 +35,11 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
         // Apply swagger decorators
         case 'swagger':
           if (options.swagger !== undefined) {
-            ApiProperty(options.swagger)(target, property);
+            if (!options.swagger.hidden) {
+              ApiProperty(options.swagger)(target, property);
+            } else {
+              ApiHideProperty()(target, property);
+            }
           }
           break;
         // Apply transformer decorators

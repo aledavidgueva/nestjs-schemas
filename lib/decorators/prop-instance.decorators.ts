@@ -113,6 +113,7 @@ function setProp<T>(
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
+      hidden: opts.private,
     },
     mongoose: {
       type: !opts.isArray ? type : [type],
