@@ -6,6 +6,8 @@
 
 ## Usage
 
+> **WARNING**: Be careful, this documentation is under construction
+
 ### Schema definition
 
 ```ts

@@ -1,10 +1,10 @@
-import { Schema } from 'mongoose';
 import { IsArray, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator';
 import { $Prop } from './prop.decorator';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
 import { ClassConstructor } from 'class-transformer';
 import { $Metadata } from './metadata.decorator';
 import { METADATA } from '../constants/metadata.const';
+import { ApiHideProperty } from '@nestjs/swagger';
 
 type PropSubSchemaCommonOpts = PropCommonOpts & {
   lookup: LookupOpts;
@@ -137,7 +137,7 @@ function setProp<T>(
     },
     validators: [],
     decorators: {
-      mongoose: [$Metadata<LookupOpts>(METADATA.MONGOOSE_LOOKUP, opts.lookup)],
+      __propDef: [$Metadata<LookupOpts>(METADATA.MONGOOSE_LOOKUP, opts.lookup)],
     },
   };
 
@@ -162,6 +162,11 @@ function setProp<T>(
   // Other validations
   if (opts.validators !== undefined) {
     prop.validators = [...prop.validators!, ...opts.validators];
+  }
+
+  // Is private field?
+  if (opts.private === true) {
+    prop.decorators?.__propDef.push(ApiHideProperty());
   }
 
   $Prop(prop)(target, property);

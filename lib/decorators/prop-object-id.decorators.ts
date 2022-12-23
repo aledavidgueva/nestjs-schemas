@@ -11,6 +11,7 @@ import {
   TransformToStringArray,
 } from '../helpers';
 import { DocumentExists } from './document-exists';
+import { ApiHideProperty } from '@nestjs/swagger';
 
 type PropObjectIdCommonOpts = PropCommonOpts & {
   ref?: string;
@@ -116,6 +117,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       transform: [],
     },
     validators: [],
+    decorators: { __propDef: [] },
   };
 
   // Set transform functions
@@ -174,6 +176,11 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   // Other validations
   if (opts.validators !== undefined) {
     prop.validators = [...prop.validators!, ...opts.validators];
+  }
+
+  // Is private field?
+  if (opts.private === true) {
+    prop.decorators?.__propDef.push(ApiHideProperty());
   }
 
   $Prop(prop)(target, property);

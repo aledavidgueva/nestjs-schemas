@@ -3,6 +3,7 @@ import { IsArray, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { $Prop } from './prop.decorator';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
 import { CastToStringArrayOptions, CastToStringOptions } from '../helpers';
+import { ApiHideProperty } from '@nestjs/swagger';
 
 type PropEnumCommonOpts = PropCommonOpts & {
   enum: any[] | Record<string, any>;
@@ -107,6 +108,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       transform: [],
     },
     validators: [],
+    decorators: { __propDef: [] },
   };
 
   // Set transform functions
@@ -152,6 +154,11 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   // Other validations
   if (opts.validators !== undefined) {
     prop.validators = [...prop.validators!, ...opts.validators];
+  }
+
+  // Is private field?
+  if (opts.private === true) {
+    prop.decorators?.__propDef.push(ApiHideProperty());
   }
 
   $Prop(prop)(target, property);

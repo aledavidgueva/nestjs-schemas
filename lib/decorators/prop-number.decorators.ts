@@ -18,6 +18,7 @@ import {
   TransformToNumber,
   TransformToNumberArray,
 } from '../helpers';
+import { ApiHideProperty } from '@nestjs/swagger';
 
 type PropNumberCommonOpts = PropCommonOpts & {
   min?: number;
@@ -127,6 +128,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       transform: [],
     },
     validators: [],
+    decorators: { __propDef: [] },
   };
 
   // Set transform functions
@@ -193,6 +195,11 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   // Other validations
   if (opts.validators !== undefined) {
     prop.validators = [...prop.validators!, ...opts.validators];
+  }
+
+  // Is private field?
+  if (opts.private === true) {
+    prop.decorators?.__propDef.push(ApiHideProperty());
   }
 
   $Prop(prop)(target, property);
