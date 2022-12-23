@@ -105,14 +105,17 @@ export function $PropNumberArrayOptional(
 function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: any) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger: {
-      type: 'number',
-      maximum: opts.max,
-      minimum: opts.min,
-      nullable: opts.isOptional,
-      default: opts.default,
-      required: !opts.isOptional,
-    },
+    swagger:
+      opts.private === true
+        ? undefined
+        : {
+            type: 'number',
+            maximum: opts.max,
+            minimum: opts.min,
+            nullable: opts.isOptional,
+            default: opts.default,
+            required: !opts.isOptional,
+          },
     mongoose: {
       type: !opts.isArray ? Schema.Types.Number : [Schema.Types.Number],
       required: !opts.isOptional,

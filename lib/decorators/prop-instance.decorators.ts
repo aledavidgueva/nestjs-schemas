@@ -7,7 +7,7 @@ import { ApiHideProperty } from '@nestjs/swagger';
 type PropInstanceCommonOpts = PropCommonOpts & {};
 
 export type PropInstanceOpts = PropInstanceCommonOpts & {
-  default: undefined;
+  default?: undefined;
 };
 
 export type PropInstanceOptionalOpts<T> = PropInstanceCommonOpts & {
@@ -15,7 +15,7 @@ export type PropInstanceOptionalOpts<T> = PropInstanceCommonOpts & {
 };
 
 export type PropInstanceArrayOpts = PropInstanceCommonOpts & {
-  default: undefined;
+  default?: undefined;
 };
 
 export type PropInstanceArrayOptionalOpts<T> = PropInstanceCommonOpts & {
@@ -30,7 +30,7 @@ type SetPropOptions<T> =
 
 export function $PropInstance<T>(
   type: ClassConstructor<T>,
-  opts: PropInstanceOpts,
+  opts: PropInstanceOpts = {},
 ): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
@@ -48,7 +48,7 @@ export function $PropInstance<T>(
 
 export function $PropInstanceArray<T>(
   type: ClassConstructor<T>,
-  opts: PropInstanceArrayOpts,
+  opts: PropInstanceArrayOpts = {},
 ): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
@@ -66,7 +66,7 @@ export function $PropInstanceArray<T>(
 
 export function $PropInstanceOptional<T>(
   type: ClassConstructor<T>,
-  opts: PropInstanceOptionalOpts<T>,
+  opts: PropInstanceOptionalOpts<T> = {},
 ): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
@@ -84,7 +84,7 @@ export function $PropInstanceOptional<T>(
 
 export function $PropInstanceArrayOptional<T>(
   type: ClassConstructor<T>,
-  opts: PropInstanceArrayOptionalOpts<T>,
+  opts: PropInstanceArrayOptionalOpts<T> = {},
 ): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
@@ -108,13 +108,16 @@ function setProp<T>(
 ) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger: {
-      type: 'object',
-      name: type.name,
-      nullable: opts.isOptional,
-      default: opts.default,
-      required: !opts.isOptional,
-    },
+    swagger:
+      opts.private === true
+        ? undefined
+        : {
+            type: 'object',
+            name: type.name,
+            nullable: opts.isOptional,
+            default: opts.default,
+            required: !opts.isOptional,
+          },
     mongoose: {
       type: !opts.isArray ? type : [type],
       required: !opts.isOptional,

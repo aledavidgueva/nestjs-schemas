@@ -89,12 +89,15 @@ export function $PropBooleanArrayOptional(
 function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: any) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger: {
-      type: 'boolean',
-      nullable: opts.isOptional,
-      default: opts.default,
-      required: !opts.isOptional,
-    },
+    swagger:
+      opts.private === true
+        ? undefined
+        : {
+            type: 'boolean',
+            nullable: opts.isOptional,
+            default: opts.default,
+            required: !opts.isOptional,
+          },
     mongoose: {
       type: !opts.isArray ? Schema.Types.Boolean : [Schema.Types.Boolean],
       required: !opts.isOptional,

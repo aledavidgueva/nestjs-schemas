@@ -86,14 +86,17 @@ export function $PropEnumArrayOptional(opts: PropEnumArrayOptionalOpts): Propert
 function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: any) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger: {
-      type: 'string',
-      enum: opts.enum,
-      enumName: opts.enumName,
-      nullable: opts.isOptional,
-      default: opts.default,
-      required: !opts.isOptional,
-    },
+    swagger:
+      opts.private === true
+        ? undefined
+        : {
+            type: 'string',
+            enum: opts.enum,
+            enumName: opts.enumName,
+            nullable: opts.isOptional,
+            default: opts.default,
+            required: !opts.isOptional,
+          },
     mongoose: {
       type: !opts.isArray ? Schema.Types.String : [Schema.Types.String],
       enum: !opts.isOptional ? Object.values(opts.enum) : [...Object.values(opts.enum), null],

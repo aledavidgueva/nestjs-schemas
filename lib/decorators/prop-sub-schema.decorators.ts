@@ -117,13 +117,16 @@ function setProp<T>(
 ) {
   // Init final opts
   const prop: PropertyOptions = {
-    swagger: {
-      type: 'object',
-      name: subSchema.name,
-      nullable: opts.isOptional,
-      default: opts.default,
-      required: !opts.isOptional,
-    },
+    swagger:
+      opts.private === true
+        ? undefined
+        : {
+            type: 'object',
+            name: subSchema.name,
+            nullable: opts.isOptional,
+            default: opts.default,
+            required: !opts.isOptional,
+          },
     mongoose: {
       type: !opts.isArray ? subSchema : [subSchema],
       required: !opts.isOptional,
