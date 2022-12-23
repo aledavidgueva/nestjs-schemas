@@ -122,8 +122,8 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       min: opts.min,
     },
     transformer: {
-      expose: opts.exclude === true ? false : true,
-      exclude: opts.exclude === true ? true : undefined,
+      expose: opts.exclude === true || opts.private === true ? false : true,
+      exclude: opts.exclude === true || opts.private === true ? true : undefined,
       type: () => Number,
       transform: [],
     },
