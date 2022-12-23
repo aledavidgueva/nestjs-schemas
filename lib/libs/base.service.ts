@@ -60,9 +60,9 @@ export abstract class BaseService<
   protected _cachePipelines: Map<string, PipelineStage[]> = new Map();
 
   constructor(
+    protected readonly _metadata: MetadataService,
     protected readonly _model: TModel,
     protected readonly _returnAs: ClassConstructor<TReturnDto>,
-    protected readonly _metadata: MetadataService,
   ) {}
 
   /**
