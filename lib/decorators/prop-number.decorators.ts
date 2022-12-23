@@ -200,10 +200,5 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
     prop.validators = [...prop.validators!, ...opts.validators];
   }
 
-  // Is private field?
-  if (opts.private === true) {
-    prop.decorators?.__propDef.push(ApiHideProperty());
-  }
-
   $Prop(prop)(target, property);
 }

@@ -2,6 +2,7 @@ import { Schema } from 'mongoose';
 import ValidatorJS from 'validator';
 import {
   IsArray,
+  IsEmail,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -26,6 +27,7 @@ type PropStringCommonOpts = PropCommonOpts & {
   pattern?: RegExp;
   unique?: boolean;
   isUrl?: boolean | ValidatorJS.IsURLOptions;
+  isEmail?: boolean | ValidatorJS.IsEmailOptions;
 };
 
 export type PropStringOpts = PropStringCommonOpts & CastToStringOptions;
@@ -186,14 +188,13 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
     prop.validators!.push(opts.isUrl === true ? IsUrl() : IsUrl(opts.isUrl));
   }
 
+  if (opts.isEmail !== undefined && opts.isEmail !== false) {
+    prop.validators!.push(opts.isEmail === true ? IsEmail() : IsEmail(opts.isEmail));
+  }
+
   // Other validations
   if (opts.validators !== undefined) {
     prop.validators = [...prop.validators!, ...opts.validators];
-  }
-
-  // Is private field?
-  if (opts.private === true) {
-    prop.decorators?.__propDef.push(ApiHideProperty());
   }
 
   $Prop(prop)(target, property);

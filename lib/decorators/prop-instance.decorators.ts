@@ -2,7 +2,6 @@ import { IsArray, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator
 import { $Prop } from './prop.decorator';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
 import { ClassConstructor } from 'class-transformer';
-import { ApiHideProperty } from '@nestjs/swagger';
 
 type PropInstanceCommonOpts = PropCommonOpts & {};
 
@@ -154,11 +153,6 @@ function setProp<T>(
   // Other validations
   if (opts.validators !== undefined) {
     prop.validators = [...prop.validators!, ...opts.validators];
-  }
-
-  // Is private field?
-  if (opts.private === true) {
-    prop.decorators?.__propDef.push(ApiHideProperty());
   }
 
   $Prop(prop)(target, property);

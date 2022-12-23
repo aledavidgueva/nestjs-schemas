@@ -19,13 +19,13 @@ export type LookupOpts = {
 };
 
 export type PropSubSchemaOpts = PropSubSchemaCommonOpts & {
-  default: undefined;
+  default?: undefined;
 };
 export type PropSubSchemaOptionalOpts<T> = PropSubSchemaCommonOpts & {
   default?: Nullable<T>;
 };
 export type PropSubSchemaArrayOpts = PropSubSchemaCommonOpts & {
-  default: undefined;
+  default?: undefined;
 };
 export type PropSubSchemaArrayOptionalOpts<T> = PropSubSchemaCommonOpts & {
   default?: Nullable<T[]>;
@@ -165,11 +165,6 @@ function setProp<T>(
   // Other validations
   if (opts.validators !== undefined) {
     prop.validators = [...prop.validators!, ...opts.validators];
-  }
-
-  // Is private field?
-  if (opts.private === true) {
-    prop.decorators?.__propDef.push(ApiHideProperty());
   }
 
   $Prop(prop)(target, property);
