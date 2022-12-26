@@ -1,31 +1,35 @@
 import { Schema } from 'mongoose';
-import { IsArray, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsDate, IsUrl, MaxDate, MinDate } from 'class-validator';
 import { $Prop } from './prop.decorator';
-import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
+import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
 import {
-  CastToBooleanArrayOptions,
-  CastToBooleanOptions,
-  TransformToBoolean,
-  TransformToBooleanArray,
-} from '../helpers';
+  CastToDateArrayOptions,
+  CastToDateOptions,
+  TransformToDate,
+  TransformToDateArray,
+} from '../../helpers';
 
-type PropBooleanCommonOpts = PropCommonOpts & {};
-
-export type PropBooleanOpts = PropBooleanCommonOpts & CastToBooleanOptions;
-export type PropBooleanOptionalOpts = Omit<PropBooleanOpts, 'default'> & {
-  default?: Nullable<PropBooleanOpts['default']>;
+type PropDateCommonOpts = PropCommonOpts & {
+  minDate?: Date;
+  maxDate?: Date;
+  unique?: boolean;
 };
-export type PropBooleanArrayOpts = PropBooleanCommonOpts & CastToBooleanArrayOptions;
-export type PropBooleanArrayOptionalOpts = Omit<PropBooleanArrayOpts, 'default'> & {
-  default?: Nullable<PropBooleanOpts['default']>;
+
+export type PropDateOpts = PropDateCommonOpts & CastToDateOptions;
+export type PropDateOptionalOpts = Omit<PropDateOpts, 'default'> & {
+  default?: Nullable<PropDateOpts['default']>;
+};
+export type PropDateArrayOpts = PropDateCommonOpts & CastToDateArrayOptions;
+export type PropDateArrayOptionalOpts = Omit<PropDateArrayOpts, 'default'> & {
+  default?: Nullable<PropDateOpts['default']>;
 };
 type SetPropOptions =
-  | PropBooleanOpts
-  | PropBooleanOptionalOpts
-  | PropBooleanArrayOpts
-  | PropBooleanArrayOptionalOpts;
+  | PropDateOpts
+  | PropDateOptionalOpts
+  | PropDateArrayOpts
+  | PropDateArrayOptionalOpts;
 
-export function $PropBoolean(opts: PropBooleanOpts = {}): PropertyDecorator {
+export function $PropDate(opts: PropDateOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -40,7 +44,7 @@ export function $PropBoolean(opts: PropBooleanOpts = {}): PropertyDecorator {
   };
 }
 
-export function $PropBooleanArray(opts: PropBooleanArrayOpts = {}): PropertyDecorator {
+export function $PropDateArray(opts: PropDateArrayOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -55,7 +59,7 @@ export function $PropBooleanArray(opts: PropBooleanArrayOpts = {}): PropertyDeco
   };
 }
 
-export function $PropBooleanOptional(opts: PropBooleanOptionalOpts = {}): PropertyDecorator {
+export function $PropDateOptional(opts: PropDateOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -69,9 +73,7 @@ export function $PropBooleanOptional(opts: PropBooleanOptionalOpts = {}): Proper
   };
 }
 
-export function $PropBooleanArrayOptional(
-  opts: PropBooleanArrayOptionalOpts = {},
-): PropertyDecorator {
+export function $PropDateArrayOptional(opts: PropDateArrayOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -89,21 +91,23 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   // Init final opts
   const prop: PropertyOptions = {
     swagger: {
-      type: 'boolean',
+      type: 'string',
+      format: 'date-time',
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
       hidden: opts.private,
     },
     mongoose: {
-      type: !opts.isArray ? Schema.Types.Boolean : [Schema.Types.Boolean],
+      type: !opts.isArray ? Schema.Types.Date : [Schema.Types.Date],
       required: !opts.isOptional,
       default: opts.default,
+      unique: opts.unique,
     },
     transformer: {
       expose: opts.exclude === true || opts.private === true ? false : true,
       exclude: opts.exclude === true || opts.private === true ? true : undefined,
-      type: () => Boolean,
+      type: () => Date,
       transform: [],
     },
     validators: [],
@@ -111,25 +115,20 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   };
 
   // Set transform functions
-  const transformToTypeOpts: CastToBooleanOptions = {
+  const transformToTypeOpts = {
+    default: <any>(<unknown>opts.default),
     nullString: opts.nullString,
     undefinedString: opts.undefinedString,
   };
 
   if (!opts.isArray) {
     prop.transformer?.transform?.push([
-      TransformToBoolean({
-        ...transformToTypeOpts,
-        default: <any>(<unknown>opts.default),
-      }),
+      TransformToDate(transformToTypeOpts),
       { toClassOnly: true },
     ]);
   } else {
     prop.transformer?.transform?.push([
-      TransformToBooleanArray({
-        ...transformToTypeOpts,
-        default: <any>(<unknown>opts.default),
-      }),
+      TransformToDateArray(transformToTypeOpts),
       { toClassOnly: true },
     ]);
   }
@@ -150,7 +149,13 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
 
   // Type validation
   if (opts.isArray) prop.validators!.push(IsArray());
-  prop.validators!.push(IsBoolean({ each: opts.isArray }));
+  prop.validators!.push(IsDate({ each: opts.isArray }));
+
+  // Date validation
+  if (opts.minDate !== undefined)
+    prop.validators!.push(MinDate(opts.minDate, { each: opts.isArray }));
+  if (opts.maxDate !== undefined)
+    prop.validators!.push(MaxDate(opts.maxDate, { each: opts.isArray }));
 
   // Other validations
   if (opts.validators !== undefined) {

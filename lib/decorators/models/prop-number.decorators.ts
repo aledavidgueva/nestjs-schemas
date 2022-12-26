@@ -1,50 +1,47 @@
 import { Schema } from 'mongoose';
-import ValidatorJS from 'validator';
 import {
   IsArray,
-  IsEmail,
   IsNotEmpty,
   IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-  MinLength,
+  IsNumber,
+  Min,
+  Max,
+  IsNumberOptions,
+  IsInt,
+  IsPositive,
 } from 'class-validator';
 import { $Prop } from './prop.decorator';
-import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
+import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
 import {
-  CastToStringArrayOptions,
-  CastToStringOptions,
-  TransformToString,
-  TransformToStringArray,
-} from '../helpers';
-import { ApiHideProperty } from '@nestjs/swagger';
+  CastToNumberArrayOptions,
+  CastToNumberOptions,
+  TransformToNumber,
+  TransformToNumberArray,
+} from '../../helpers';
 
-type PropStringCommonOpts = PropCommonOpts & {
-  minLenght?: number;
-  maxLenght?: number;
-  format?: string;
-  pattern?: RegExp;
+type PropNumberCommonOpts = PropCommonOpts & {
+  min?: number;
+  max?: number;
+  isInt?: boolean;
+  isPositive?: boolean;
   unique?: boolean;
-  isUrl?: boolean | ValidatorJS.IsURLOptions;
-  isEmail?: boolean | ValidatorJS.IsEmailOptions;
-};
+} & IsNumberOptions;
 
-export type PropStringOpts = PropStringCommonOpts & CastToStringOptions;
-export type PropStringOptionalOpts = Omit<PropStringOpts, 'default'> & {
-  default?: Nullable<PropStringOpts['default']>;
+export type PropNumberOpts = PropNumberCommonOpts & CastToNumberOptions;
+export type PropNumberOptionalOpts = Omit<PropNumberOpts, 'default'> & {
+  default?: Nullable<PropNumberOpts['default']>;
 };
-export type PropStringArrayOpts = PropStringCommonOpts & CastToStringArrayOptions;
-export type PropStringArrayOptionalOpts = Omit<PropStringArrayOpts, 'default'> & {
-  default?: Nullable<PropStringOpts['default']>;
+export type PropNumberArrayOpts = PropNumberCommonOpts & CastToNumberArrayOptions;
+export type PropNumberArrayOptionalOpts = Omit<PropNumberArrayOpts, 'default'> & {
+  default?: Nullable<PropNumberOpts['default']>;
 };
 type SetPropOptions =
-  | PropStringOpts
-  | PropStringOptionalOpts
-  | PropStringArrayOpts
-  | PropStringArrayOptionalOpts;
+  | PropNumberOpts
+  | PropNumberOptionalOpts
+  | PropNumberArrayOpts
+  | PropNumberArrayOptionalOpts;
 
-export function $PropString(opts: PropStringOpts = {}): PropertyDecorator {
+export function $PropNumber(opts: PropNumberOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -59,7 +56,7 @@ export function $PropString(opts: PropStringOpts = {}): PropertyDecorator {
   };
 }
 
-export function $PropStringArray(opts: PropStringArrayOpts = {}): PropertyDecorator {
+export function $PropNumberArray(opts: PropNumberArrayOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -74,7 +71,7 @@ export function $PropStringArray(opts: PropStringArrayOpts = {}): PropertyDecora
   };
 }
 
-export function $PropStringOptional(opts: PropStringOptionalOpts = {}): PropertyDecorator {
+export function $PropNumberOptional(opts: PropNumberOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -88,8 +85,8 @@ export function $PropStringOptional(opts: PropStringOptionalOpts = {}): Property
   };
 }
 
-export function $PropStringArrayOptional(
-  opts: PropStringArrayOptionalOpts = {},
+export function $PropNumberArrayOptional(
+  opts: PropNumberArrayOptionalOpts = {},
 ): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
@@ -108,28 +105,24 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   // Init final opts
   const prop: PropertyOptions = {
     swagger: {
-      type: 'string',
-      format: opts.format,
-      pattern: opts.pattern ? opts.pattern.toString() : undefined,
-      maxLength: opts.maxLenght,
-      minLength: opts.minLenght,
+      type: 'number',
+      maximum: opts.max,
+      minimum: opts.min,
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
       hidden: opts.private,
     },
     mongoose: {
-      type: !opts.isArray ? Schema.Types.String : [Schema.Types.String],
+      type: !opts.isArray ? Schema.Types.Number : [Schema.Types.Number],
       required: !opts.isOptional,
       default: opts.default,
       unique: opts.unique,
-      minlength: opts.minLenght,
-      maxlength: opts.maxLenght,
     },
     transformer: {
       expose: opts.exclude === true || opts.private === true ? false : true,
       exclude: opts.exclude === true || opts.private === true ? true : undefined,
-      type: () => String,
+      type: () => Number,
       transform: [],
     },
     validators: [],
@@ -137,22 +130,27 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   };
 
   // Set transform functions
-  const transformToTypeOpts = {
-    default: <any>(<unknown>opts.default),
+  const transformToTypeOpts: CastToNumberOptions = {
     nullString: opts.nullString,
     undefinedString: opts.undefinedString,
-    case: opts.case,
-    trim: opts.trim ?? true,
+    fixed: opts.fixed,
+    round: opts.round,
   };
 
   if (!opts.isArray) {
     prop.transformer?.transform?.push([
-      TransformToString(transformToTypeOpts),
+      TransformToNumber({
+        ...transformToTypeOpts,
+        default: <any>(<unknown>opts.default),
+      }),
       { toClassOnly: true },
     ]);
   } else {
     prop.transformer?.transform?.push([
-      TransformToStringArray(transformToTypeOpts),
+      TransformToNumberArray({
+        ...transformToTypeOpts,
+        default: <any>(<unknown>opts.default),
+      }),
       { toClassOnly: true },
     ]);
   }
@@ -173,22 +171,24 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
 
   // Type validation
   if (opts.isArray) prop.validators!.push(IsArray());
-  prop.validators!.push(IsString({ each: opts.isArray }));
+  prop.validators!.push(
+    IsNumber(
+      {
+        allowInfinity: opts.allowInfinity ?? false,
+        allowNaN: opts.allowNaN ?? false,
+        maxDecimalPlaces: opts.maxDecimalPlaces,
+      },
+      { each: opts.isArray },
+    ),
+  );
 
   // Lenght validation
-  if (opts.minLenght !== undefined)
-    prop.validators!.push(MinLength(opts.minLenght, { each: opts.isArray }));
-  if (opts.maxLenght !== undefined)
-    prop.validators!.push(MaxLength(opts.maxLenght, { each: opts.isArray }));
+  if (opts.min !== undefined) prop.validators!.push(Min(opts.min, { each: opts.isArray }));
+  if (opts.max !== undefined) prop.validators!.push(Max(opts.max, { each: opts.isArray }));
 
   // Format validation
-  if (opts.isUrl !== undefined && opts.isUrl !== false) {
-    prop.validators!.push(opts.isUrl === true ? IsUrl() : IsUrl(opts.isUrl));
-  }
-
-  if (opts.isEmail !== undefined && opts.isEmail !== false) {
-    prop.validators!.push(opts.isEmail === true ? IsEmail() : IsEmail(opts.isEmail));
-  }
+  if (opts.isInt === true) prop.validators!.push(IsInt({ each: opts.isArray }));
+  if (opts.isPositive === true) prop.validators!.push(IsPositive({ each: opts.isArray }));
 
   // Other validations
   if (opts.validators !== undefined) {

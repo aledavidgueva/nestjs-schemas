@@ -1,35 +1,30 @@
 import { Schema } from 'mongoose';
-import { IsArray, IsNotEmpty, IsOptional, IsDate, IsUrl, MaxDate, MinDate } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { $Prop } from './prop.decorator';
-import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
-import {
-  CastToDateArrayOptions,
-  CastToDateOptions,
-  TransformToDate,
-  TransformToDateArray,
-} from '../helpers';
+import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
+import { CastToStringArrayOptions, CastToStringOptions } from '../../helpers';
 
-type PropDateCommonOpts = PropCommonOpts & {
-  minDate?: Date;
-  maxDate?: Date;
+type PropEnumCommonOpts = PropCommonOpts & {
+  enum: any[] | Record<string, any>;
+  enumName: string;
   unique?: boolean;
 };
 
-export type PropDateOpts = PropDateCommonOpts & CastToDateOptions;
-export type PropDateOptionalOpts = Omit<PropDateOpts, 'default'> & {
-  default?: Nullable<PropDateOpts['default']>;
+export type PropEnumOpts = PropEnumCommonOpts & CastToStringOptions;
+export type PropEnumOptionalOpts = Omit<PropEnumOpts, 'default'> & {
+  default?: Nullable<PropEnumOpts['default']>;
 };
-export type PropDateArrayOpts = PropDateCommonOpts & CastToDateArrayOptions;
-export type PropDateArrayOptionalOpts = Omit<PropDateArrayOpts, 'default'> & {
-  default?: Nullable<PropDateOpts['default']>;
+export type PropEnumArrayOpts = PropEnumCommonOpts & CastToStringArrayOptions;
+export type PropEnumArrayOptionalOpts = Omit<PropEnumArrayOpts, 'default'> & {
+  default?: Nullable<PropEnumOpts['default']>;
 };
 type SetPropOptions =
-  | PropDateOpts
-  | PropDateOptionalOpts
-  | PropDateArrayOpts
-  | PropDateArrayOptionalOpts;
+  | PropEnumOpts
+  | PropEnumOptionalOpts
+  | PropEnumArrayOpts
+  | PropEnumArrayOptionalOpts;
 
-export function $PropDate(opts: PropDateOpts = {}): PropertyDecorator {
+export function $PropEnum(opts: PropEnumOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -44,7 +39,7 @@ export function $PropDate(opts: PropDateOpts = {}): PropertyDecorator {
   };
 }
 
-export function $PropDateArray(opts: PropDateArrayOpts = {}): PropertyDecorator {
+export function $PropEnumArray(opts: PropEnumArrayOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -59,7 +54,7 @@ export function $PropDateArray(opts: PropDateArrayOpts = {}): PropertyDecorator 
   };
 }
 
-export function $PropDateOptional(opts: PropDateOptionalOpts = {}): PropertyDecorator {
+export function $PropEnumOptional(opts: PropEnumOptionalOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -73,7 +68,7 @@ export function $PropDateOptional(opts: PropDateOptionalOpts = {}): PropertyDeco
   };
 }
 
-export function $PropDateArrayOptional(opts: PropDateArrayOptionalOpts = {}): PropertyDecorator {
+export function $PropEnumArrayOptional(opts: PropEnumArrayOptionalOpts): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -92,14 +87,16 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   const prop: PropertyOptions = {
     swagger: {
       type: 'string',
-      format: 'date-time',
+      enum: opts.enum,
+      enumName: opts.enumName,
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
       hidden: opts.private,
     },
     mongoose: {
-      type: !opts.isArray ? Schema.Types.Date : [Schema.Types.Date],
+      type: !opts.isArray ? Schema.Types.String : [Schema.Types.String],
+      enum: !opts.isOptional ? Object.values(opts.enum) : [...Object.values(opts.enum), null],
       required: !opts.isOptional,
       default: opts.default,
       unique: opts.unique,
@@ -107,7 +104,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
     transformer: {
       expose: opts.exclude === true || opts.private === true ? false : true,
       exclude: opts.exclude === true || opts.private === true ? true : undefined,
-      type: () => Date,
+      type: () => String,
       transform: [],
     },
     validators: [],
@@ -119,19 +116,22 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
     default: <any>(<unknown>opts.default),
     nullString: opts.nullString,
     undefinedString: opts.undefinedString,
+    case: opts.case,
+    trim: opts.trim ?? true,
   };
 
-  if (!opts.isArray) {
+  /*   if (!opts.isArray) {
     prop.transformer?.transform?.push([
-      TransformToDate(transformToTypeOpts),
+      TransformToString(transformToTypeOpts),
       { toClassOnly: true },
     ]);
   } else {
     prop.transformer?.transform?.push([
-      TransformToDateArray(transformToTypeOpts),
+      TransformToStringArray(transformToTypeOpts),
       { toClassOnly: true },
     ]);
   }
+ */
 
   // User custom transform chain fn
   if (opts.transform !== undefined) {
@@ -149,13 +149,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
 
   // Type validation
   if (opts.isArray) prop.validators!.push(IsArray());
-  prop.validators!.push(IsDate({ each: opts.isArray }));
-
-  // Date validation
-  if (opts.minDate !== undefined)
-    prop.validators!.push(MinDate(opts.minDate, { each: opts.isArray }));
-  if (opts.maxDate !== undefined)
-    prop.validators!.push(MaxDate(opts.maxDate, { each: opts.isArray }));
+  prop.validators!.push(IsEnum(opts.enum, { each: opts.isArray }));
 
   // Other validations
   if (opts.validators !== undefined) {

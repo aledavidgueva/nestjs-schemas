@@ -1,30 +1,31 @@
 import { Schema } from 'mongoose';
-import { IsArray, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 import { $Prop } from './prop.decorator';
-import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
-import { CastToStringArrayOptions, CastToStringOptions } from '../helpers';
+import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
+import {
+  CastToBooleanArrayOptions,
+  CastToBooleanOptions,
+  TransformToBoolean,
+  TransformToBooleanArray,
+} from '../../helpers';
 
-type PropEnumCommonOpts = PropCommonOpts & {
-  enum: any[] | Record<string, any>;
-  enumName: string;
-  unique?: boolean;
-};
+type PropBooleanCommonOpts = PropCommonOpts & {};
 
-export type PropEnumOpts = PropEnumCommonOpts & CastToStringOptions;
-export type PropEnumOptionalOpts = Omit<PropEnumOpts, 'default'> & {
-  default?: Nullable<PropEnumOpts['default']>;
+export type PropBooleanOpts = PropBooleanCommonOpts & CastToBooleanOptions;
+export type PropBooleanOptionalOpts = Omit<PropBooleanOpts, 'default'> & {
+  default?: Nullable<PropBooleanOpts['default']>;
 };
-export type PropEnumArrayOpts = PropEnumCommonOpts & CastToStringArrayOptions;
-export type PropEnumArrayOptionalOpts = Omit<PropEnumArrayOpts, 'default'> & {
-  default?: Nullable<PropEnumOpts['default']>;
+export type PropBooleanArrayOpts = PropBooleanCommonOpts & CastToBooleanArrayOptions;
+export type PropBooleanArrayOptionalOpts = Omit<PropBooleanArrayOpts, 'default'> & {
+  default?: Nullable<PropBooleanOpts['default']>;
 };
 type SetPropOptions =
-  | PropEnumOpts
-  | PropEnumOptionalOpts
-  | PropEnumArrayOpts
-  | PropEnumArrayOptionalOpts;
+  | PropBooleanOpts
+  | PropBooleanOptionalOpts
+  | PropBooleanArrayOpts
+  | PropBooleanArrayOptionalOpts;
 
-export function $PropEnum(opts: PropEnumOpts): PropertyDecorator {
+export function $PropBoolean(opts: PropBooleanOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -39,7 +40,7 @@ export function $PropEnum(opts: PropEnumOpts): PropertyDecorator {
   };
 }
 
-export function $PropEnumArray(opts: PropEnumArrayOpts): PropertyDecorator {
+export function $PropBooleanArray(opts: PropBooleanArrayOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -54,7 +55,7 @@ export function $PropEnumArray(opts: PropEnumArrayOpts): PropertyDecorator {
   };
 }
 
-export function $PropEnumOptional(opts: PropEnumOptionalOpts): PropertyDecorator {
+export function $PropBooleanOptional(opts: PropBooleanOptionalOpts = {}): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -68,7 +69,9 @@ export function $PropEnumOptional(opts: PropEnumOptionalOpts): PropertyDecorator
   };
 }
 
-export function $PropEnumArrayOptional(opts: PropEnumArrayOptionalOpts): PropertyDecorator {
+export function $PropBooleanArrayOptional(
+  opts: PropBooleanArrayOptionalOpts = {},
+): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
       {
@@ -86,25 +89,21 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   // Init final opts
   const prop: PropertyOptions = {
     swagger: {
-      type: 'string',
-      enum: opts.enum,
-      enumName: opts.enumName,
+      type: 'boolean',
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
       hidden: opts.private,
     },
     mongoose: {
-      type: !opts.isArray ? Schema.Types.String : [Schema.Types.String],
-      enum: !opts.isOptional ? Object.values(opts.enum) : [...Object.values(opts.enum), null],
+      type: !opts.isArray ? Schema.Types.Boolean : [Schema.Types.Boolean],
       required: !opts.isOptional,
       default: opts.default,
-      unique: opts.unique,
     },
     transformer: {
       expose: opts.exclude === true || opts.private === true ? false : true,
       exclude: opts.exclude === true || opts.private === true ? true : undefined,
-      type: () => String,
+      type: () => Boolean,
       transform: [],
     },
     validators: [],
@@ -112,26 +111,28 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   };
 
   // Set transform functions
-  const transformToTypeOpts = {
-    default: <any>(<unknown>opts.default),
+  const transformToTypeOpts: CastToBooleanOptions = {
     nullString: opts.nullString,
     undefinedString: opts.undefinedString,
-    case: opts.case,
-    trim: opts.trim ?? true,
   };
 
-  /*   if (!opts.isArray) {
+  if (!opts.isArray) {
     prop.transformer?.transform?.push([
-      TransformToString(transformToTypeOpts),
+      TransformToBoolean({
+        ...transformToTypeOpts,
+        default: <any>(<unknown>opts.default),
+      }),
       { toClassOnly: true },
     ]);
   } else {
     prop.transformer?.transform?.push([
-      TransformToStringArray(transformToTypeOpts),
+      TransformToBooleanArray({
+        ...transformToTypeOpts,
+        default: <any>(<unknown>opts.default),
+      }),
       { toClassOnly: true },
     ]);
   }
- */
 
   // User custom transform chain fn
   if (opts.transform !== undefined) {
@@ -149,7 +150,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
 
   // Type validation
   if (opts.isArray) prop.validators!.push(IsArray());
-  prop.validators!.push(IsEnum(opts.enum, { each: opts.isArray }));
+  prop.validators!.push(IsBoolean({ each: opts.isArray }));
 
   // Other validations
   if (opts.validators !== undefined) {

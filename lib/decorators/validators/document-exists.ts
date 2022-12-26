@@ -7,7 +7,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import { DatabaseService } from '../database.service';
+import { DatabaseService } from '../../database.service';
 
 /**
  * Verificar la existencia de un documento de mongo mediante su id

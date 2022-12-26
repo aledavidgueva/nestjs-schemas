@@ -203,7 +203,10 @@ class MetadataStorageHostV1 {
     const reflectedType = Reflect.getMetadata('design:type', schema, property);
 
     let type: any = 'undefined';
-    if (options.swagger?.type) {
+    let mongoType: any = (<any>(<unknown>options.mongoose))?.type;
+    if (mongoType) {
+      type = mongoType;
+    } else if (options.swagger?.type) {
       type = options.swagger.type;
     } else if (options.transformer?.type) {
       const factory = !Array.isArray(options.transformer.type)

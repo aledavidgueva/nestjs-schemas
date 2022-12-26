@@ -1,7 +1,8 @@
+import { Schema } from 'mongoose';
 import { IsArray, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator';
 import { $Prop } from './prop.decorator';
-import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
 import { ClassConstructor } from 'class-transformer';
+import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
 
 type PropInstanceCommonOpts = PropCommonOpts & {};
 
@@ -116,7 +117,7 @@ function setProp<T>(
       hidden: opts.private,
     },
     mongoose: {
-      type: !opts.isArray ? type : [type],
+      type: !opts.isArray ? Schema.Types.Mixed : [Schema.Types.Mixed],
       required: !opts.isOptional,
       default: opts.default,
     },

@@ -1,9 +1,9 @@
 import { IsArray, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator';
 import { $Prop } from './prop.decorator';
-import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../types';
+import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
 import { ClassConstructor } from 'class-transformer';
 import { $Metadata } from './metadata.decorator';
-import { METADATA } from '../constants/metadata.const';
+import { METADATA } from '../../constants/metadata.const';
 
 type PropSubSchemaCommonOpts = PropCommonOpts & {
   lookup: LookupOpts;

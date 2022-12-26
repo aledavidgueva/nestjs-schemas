@@ -1,8 +1,8 @@
 import { Prop } from '@nestjs/mongoose';
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
-import { _MetadataStorageV1 } from '../libs/storage';
-import { PropertyOptions } from '../types';
+import { _MetadataStorageV1 } from '../../libs/storage';
+import { PropertyOptions } from '../../types';
 
 export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
   return (target: any, property: any) => {
