@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   registerDecorator,
   ValidationArguments,
@@ -8,6 +8,7 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 import { DatabaseService } from '../../database.service';
+import { ObjectId } from '../../types';
 
 /**
  * Verificar la existencia de un documento de mongo mediante su id
@@ -17,12 +18,18 @@ import { DatabaseService } from '../../database.service';
 @ValidatorConstraint({ name: 'documentExists', async: true })
 @Injectable()
 export class DocumentExistsValidator implements ValidatorConstraintInterface {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly _config: ConfigService,
+    private readonly _database: DatabaseService,
+  ) {}
 
-  async validate(value: Types.ObjectId, args: ValidationArguments) {
+  async validate(value: ObjectId, args: ValidationArguments) {
+    if (this._config.getOrThrow<string>('NODE_ENV') === 'test') {
+      return true;
+    }
     const [collection] = args.constraints;
     try {
-      const conn = this.databaseService.getConnection();
+      const conn = this._database.getConnection();
       const doc = await conn
         .collection(collection)
         .findOne({ _id: value }, { projection: { _id: true } });

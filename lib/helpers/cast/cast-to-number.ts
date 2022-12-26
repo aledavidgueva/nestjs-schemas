@@ -16,10 +16,13 @@ export type CastToNumberArrayOptions = CommonCastOptions &
     default?: number[];
   };
 
-export function castToNumber(value: any, options: CastToNumberOptions = {}) {
+export function castToNumber(
+  value: any,
+  options: CastToNumberOptions = {},
+): number | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   let newValue: number | null | undefined;
-  if (newValue !== null && newValue !== undefined) {
+  if (value !== null && value !== undefined) {
     try {
       newValue = _castToNumber(value);
     } catch (_) {
@@ -31,7 +34,10 @@ export function castToNumber(value: any, options: CastToNumberOptions = {}) {
   return newValue;
 }
 
-export function castToNumberArray(value: any, options: CastToNumberArrayOptions = {}) {
+export function castToNumberArray(
+  value: any,
+  options: CastToNumberArrayOptions = {},
+): number[] | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   value = Array.isArray(value) ? value : undefined;
   let newValue: number[] | null | undefined;
@@ -46,8 +52,6 @@ export function castToNumberArray(value: any, options: CastToNumberArrayOptions 
     }
   } else if (options.default !== undefined) {
     newValue = options.default;
-  } else {
-    newValue = value;
   }
   return newValue;
 }

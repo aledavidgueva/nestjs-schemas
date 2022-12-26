@@ -8,12 +8,12 @@ import {
 
 export function TransformToObjectId(options: CastToObjectIdOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToObjectIdFn(params.value, options);
+    return castToObjectIdFn(params.obj[params.key], options);
   };
 }
 
 export function TransformToObjectIdArray(options: CastToObjectIdArrayOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToObjectIdArrayFn(params.value, options);
+    return castToObjectIdArrayFn(params.obj[params.key], options);
   };
 }

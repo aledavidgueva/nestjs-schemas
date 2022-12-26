@@ -8,12 +8,12 @@ import {
 
 export function TransformToString(options: CastToStringOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToStringFn(params.value, options);
+    return castToStringFn(params.obj[params.key], options);
   };
 }
 
 export function TransformToStringArray(options: CastToStringArrayOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToStringArrayFn(params.value, options);
+    return castToStringArrayFn(params.obj[params.key], options);
   };
 }

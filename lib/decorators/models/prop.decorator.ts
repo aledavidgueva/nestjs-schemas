@@ -75,7 +75,10 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
             if (options.transformer.type !== undefined) {
               if (typeof options.transformer.type === 'function') {
                 Type(options.transformer.type)(target, property);
-              } else {
+              } else if (
+                Array.isArray(options.transformer.type) &&
+                typeof options.transformer.type[0] === 'function'
+              ) {
                 Type(options.transformer.type[0], options.transformer.type[1])(target, property);
               }
             }

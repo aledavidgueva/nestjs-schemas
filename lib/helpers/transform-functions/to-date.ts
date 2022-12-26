@@ -8,12 +8,12 @@ import {
 
 export function TransformToDate(options: CastToDateOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToDateFn(params.value, options);
+    return castToDateFn(params.obj[params.key], options);
   };
 }
 
 export function TransformToDateArray(options: CastToDateArrayOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToDateArrayFn(params.value, options);
+    return castToDateArrayFn(params.obj[params.key], options);
   };
 }

@@ -1,7 +1,7 @@
-import { Schema, Types } from 'mongoose';
+import { Schema } from 'mongoose';
 import { IsArray, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator';
 import { $Prop } from './prop.decorator';
-import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
+import { CommonPropOpts, Nullable, ObjectId, PropCommonOpts, PropertyOptions } from '../../types';
 import {
   CastToObjectIdArrayOptions,
   CastToObjectIdOptions,
@@ -113,7 +113,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
     transformer: {
       expose: opts.exclude === true || opts.private === true ? false : true,
       exclude: opts.exclude === true || opts.private === true ? true : undefined,
-      type: () => Types.ObjectId,
+      type: () => ObjectId,
       transform: [],
     },
     validators: [],

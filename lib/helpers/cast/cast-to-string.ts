@@ -15,7 +15,10 @@ export type CastToStringArrayOptions = CommonCastOptions &
     default?: string[];
   };
 
-export function castToString(value: any, options: CastToStringOptions = {}) {
+export function castToString(
+  value: any,
+  options: CastToStringOptions = {},
+): string | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   let newValue: string | null | undefined;
   if (value !== null && value !== undefined) {
@@ -26,17 +29,18 @@ export function castToString(value: any, options: CastToStringOptions = {}) {
     }
   } else if (options.default !== undefined) {
     newValue = options.default;
-  } else {
-    newValue = value;
   }
   return newValue;
 }
 
-export function castToStringArray(value: any, options: CastToStringArrayOptions = {}) {
+export function castToStringArray(
+  value: any,
+  options: CastToStringArrayOptions = {},
+): string[] | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   value = Array.isArray(value) ? value : undefined;
   let newValue: string[] | null | undefined;
-  if (newValue !== null && newValue !== undefined) {
+  if (value !== null && value !== undefined) {
     try {
       newValue = [];
       for (let element of value) {
@@ -65,7 +69,10 @@ function _castToString(value: any, options: CastToString = {}) {
   }
 
   // Apply type transformation
-  if (options.trim) newValue = newValue?.trim();
+  if (options.trim) {
+    newValue = newValue?.trim();
+  }
+
   if (options.case) {
     switch (options.case) {
       case 'upperCase':

@@ -13,10 +13,10 @@ export type CastToDateArrayOptions = CommonCastOptions &
     default?: Date[];
   };
 
-export function castToDate(value: any, options: CastToDateOptions = {}) {
+export function castToDate(value: any, options: CastToDateOptions = {}): Date | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   let newValue: Date | null | undefined;
-  if (newValue !== null && newValue !== undefined) {
+  if (value !== null && value !== undefined) {
     try {
       newValue = _castToDate(value, options);
     } catch (_) {
@@ -28,7 +28,10 @@ export function castToDate(value: any, options: CastToDateOptions = {}) {
   return newValue;
 }
 
-export function castToDateArray(value: any, options: CastToDateArrayOptions = {}) {
+export function castToDateArray(
+  value: any,
+  options: CastToDateArrayOptions = {},
+): Date[] | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   value = Array.isArray(value) ? value : undefined;
   let newValue: Date[] | null | undefined;
@@ -43,8 +46,6 @@ export function castToDateArray(value: any, options: CastToDateArrayOptions = {}
     }
   } else if (options.default !== undefined) {
     newValue = options.default;
-  } else {
-    newValue = value;
   }
   return newValue;
 }

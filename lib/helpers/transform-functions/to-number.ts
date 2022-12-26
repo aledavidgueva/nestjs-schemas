@@ -8,12 +8,12 @@ import {
 
 export function TransformToNumber(options: CastToNumberOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToNumberFn(params.value, options);
+    return castToNumberFn(params.obj[params.key], options);
   };
 }
 
 export function TransformToNumberArray(options: CastToNumberArrayOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToNumberArrayFn(params.value, options);
+    return castToNumberArrayFn(params.obj[params.key], options);
   };
 }

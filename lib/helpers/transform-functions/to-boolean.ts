@@ -8,12 +8,12 @@ import {
 
 export function TransformToBoolean(options: CastToBooleanOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToBooleanFn(params.value, options);
+    return castToBooleanFn(params.obj[params.key], options);
   };
 }
 
 export function TransformToBooleanArray(options: CastToBooleanArrayOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToBooleanArrayFn(params.value, options);
+    return castToBooleanArrayFn(params.obj[params.key], options);
   };
 }

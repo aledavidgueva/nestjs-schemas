@@ -8,12 +8,12 @@ import {
 
 export function TransformToPojo(options: CastToPojoOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToPojoFn(params.value, options);
+    return castToPojoFn(params.obj[params.key], options);
   };
 }
 
 export function TransformToPojoArray(options: CastToPojoArrayOptions = {}) {
   return (params: TransformFnParams) => {
-    return castToPojoArrayFn(params.value, options);
+    return castToPojoArrayFn(params.obj[params.key], options);
   };
 }

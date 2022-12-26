@@ -11,7 +11,7 @@ export type CastToPojoArrayOptions = CommonCastOptions &
     default?: object[];
   };
 
-export function castToPojo(value: any, options: CastToPojoOptions = {}) {
+export function castToPojo(value: any, options: CastToPojoOptions = {}): object | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   let newValue: object | null | undefined;
   if (value !== null && value !== undefined) {
@@ -22,17 +22,18 @@ export function castToPojo(value: any, options: CastToPojoOptions = {}) {
     }
   } else if (options.default !== undefined) {
     newValue = options.default;
-  } else {
-    newValue = value;
   }
   return newValue;
 }
 
-export function castToPojoArray(value: any, options: CastToPojoArrayOptions = {}) {
+export function castToPojoArray(
+  value: any,
+  options: CastToPojoArrayOptions = {},
+): object[] | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   value = Array.isArray(value) ? value : undefined;
   let newValue: object[] | null | undefined;
-  if (newValue !== null && newValue !== undefined) {
+  if (value !== null && value !== undefined) {
     try {
       newValue = [];
       for (let element of value) {

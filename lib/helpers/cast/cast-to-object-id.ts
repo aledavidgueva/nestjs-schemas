@@ -1,22 +1,25 @@
-import { Types } from 'mongoose';
+import { ObjectId } from '../../types';
 import { checkNullOrUndefinedString, CommonCastOptions } from './common';
 
 export type CastToObjectId = {};
 
 export type CastToObjectIdOptions = CommonCastOptions &
   CastToObjectId & {
-    default?: Types.ObjectId;
+    default?: ObjectId;
   };
 
 export type CastToObjectIdArrayOptions = CommonCastOptions &
   CastToObjectId & {
-    default?: Types.ObjectId[];
+    default?: ObjectId[];
   };
 
-export function castToObjectId(value: any, options: CastToObjectIdOptions = {}) {
+export function castToObjectId(
+  value: any,
+  options: CastToObjectIdOptions = {},
+): ObjectId | null | undefined {
   value = checkNullOrUndefinedString(value, options);
-  let newValue: Types.ObjectId | null | undefined;
-  if (newValue !== null && newValue !== undefined) {
+  let newValue: ObjectId | null | undefined;
+  if (value !== null && value !== undefined) {
     try {
       newValue = _castToObjectId(value);
     } catch (_) {
@@ -28,10 +31,13 @@ export function castToObjectId(value: any, options: CastToObjectIdOptions = {}) 
   return newValue;
 }
 
-export function castToObjectIdArray(value: any, options: CastToObjectIdArrayOptions = {}) {
+export function castToObjectIdArray(
+  value: any,
+  options: CastToObjectIdArrayOptions = {},
+): ObjectId[] | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   value = Array.isArray(value) ? value : undefined;
-  let newValue: Types.ObjectId[] | null | undefined;
+  let newValue: ObjectId[] | null | undefined;
   if (value !== null && value !== undefined) {
     try {
       newValue = [];
@@ -43,22 +49,16 @@ export function castToObjectIdArray(value: any, options: CastToObjectIdArrayOpti
     }
   } else if (options.default !== undefined) {
     newValue = options.default;
-  } else {
-    newValue = value;
   }
   return newValue;
 }
 
 function _castToObjectId(value: any, options: CastToObjectId = {}) {
-  let newValue: Types.ObjectId;
-  if (typeof value === 'object' && value instanceof Types.ObjectId) {
-    newValue = value;
+  let newValue: ObjectId;
+  if (ObjectId.isValid(value)) {
+    newValue = new ObjectId(value);
   } else {
-    if (Types.ObjectId.isValid(value)) {
-      newValue = new Types.ObjectId(value);
-    } else {
-      throw new Error('Cast to object id error');
-    }
+    throw new Error('Cast to object id error');
   }
   return newValue;
 }

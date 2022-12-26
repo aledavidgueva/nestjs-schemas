@@ -12,7 +12,10 @@ export type CastToBooleanArrayOptions = CommonCastOptions &
     default?: boolean[];
   };
 
-export function castToBoolean(value: any, options: CastToBooleanOptions = {}) {
+export function castToBoolean(
+  value: any,
+  options: CastToBooleanOptions = {},
+): boolean | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   let newValue: boolean | null | undefined;
   if (value !== null && value !== undefined) {
@@ -23,17 +26,18 @@ export function castToBoolean(value: any, options: CastToBooleanOptions = {}) {
     }
   } else if (options.default !== undefined) {
     newValue = options.default;
-  } else {
-    newValue = value;
   }
   return newValue;
 }
 
-export function castToBooleanArray(value: any, options: CastToBooleanArrayOptions = {}) {
+export function castToBooleanArray(
+  value: any,
+  options: CastToBooleanArrayOptions = {},
+): boolean[] | null | undefined {
   value = checkNullOrUndefinedString(value, options);
   value = Array.isArray(value) ? value : undefined;
   let newValue: boolean[] | null | undefined;
-  if (newValue !== null && newValue !== undefined) {
+  if (value !== null && value !== undefined) {
     try {
       newValue = [];
       for (let element of value) {
