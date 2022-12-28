@@ -37,8 +37,6 @@ export function $Prop(options: PropertyOptions = {}): PropertyDecorator {
           if (options.swagger !== undefined) {
             if (!options.swagger.hidden) {
               ApiProperty(options.swagger)(target, property);
-            } else {
-              ApiHideProperty()(target, property);
             }
           }
           break;

@@ -93,6 +93,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
       default: opts.default,
       required: !opts.isOptional,
       hidden: opts.private,
+      isArray: opts.isArray,
     },
     mongoose: {
       type: !opts.isArray ? Schema.Types.String : [Schema.Types.String],
@@ -135,7 +136,7 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
 
   // User custom transform chain fn
   if (opts.transform !== undefined) {
-    prop.transformer!.transform = [...prop.transformer!.transform!, ...opts.transform];
+    prop.transformer!.transform = [...opts.transform];
   }
 
   // Validations

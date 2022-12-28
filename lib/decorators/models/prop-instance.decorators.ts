@@ -109,12 +109,12 @@ function setProp<T>(
   // Init final opts
   const prop: PropertyOptions = {
     swagger: {
-      type: 'object',
-      name: type.name,
+      type: type,
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
       hidden: opts.private,
+      isArray: opts.isArray,
     },
     mongoose: {
       type: !opts.isArray ? Schema.Types.Mixed : [Schema.Types.Mixed],
@@ -133,7 +133,7 @@ function setProp<T>(
 
   // User custom transform chain fn
   if (opts.transform !== undefined) {
-    prop.transformer!.transform = [...prop.transformer!.transform!, ...opts.transform];
+    prop.transformer!.transform = [...opts.transform];
   }
 
   // Validations

@@ -6,15 +6,15 @@ import { $Metadata } from './metadata.decorator';
 import { METADATA } from '../../constants/metadata.const';
 
 type PropSubSchemaCommonOpts = PropCommonOpts & {
-  lookup: LookupOpts;
+  lookup: Omit<LookupOpts, 'justOne'>;
 };
 
 export type LookupOpts = {
   from: string;
   localField: string;
   foreignField: string;
-  justOne: true;
-  preserveNullAndEmptyArrays: true;
+  preserveNullAndEmptyArrays?: boolean;
+  justOne?: boolean;
 };
 
 export type PropSubSchemaOpts = PropSubSchemaCommonOpts & {
@@ -117,12 +117,12 @@ function setProp<T>(
   // Init final opts
   const prop: PropertyOptions = {
     swagger: {
-      type: 'object',
-      name: subSchema.name,
+      type: subSchema,
       nullable: opts.isOptional,
       default: opts.default,
       required: !opts.isOptional,
       hidden: opts.private,
+      isArray: opts.isArray,
     },
     mongoose: {
       type: !opts.isArray ? subSchema : [subSchema],
@@ -137,13 +137,15 @@ function setProp<T>(
     },
     validators: [],
     decorators: {
-      __propDef: [$Metadata<LookupOpts>(METADATA.MONGOOSE_LOOKUP, opts.lookup)],
+      __propDef: [
+        $Metadata<LookupOpts>(METADATA.MONGOOSE_LOOKUP, { ...opts.lookup, justOne: !opts.isArray }),
+      ],
     },
   };
 
   // User custom transform chain fn
   if (opts.transform !== undefined) {
-    prop.transformer!.transform = [...prop.transformer!.transform!, ...opts.transform];
+    prop.transformer!.transform = [...opts.transform];
   }
 
   // Validations

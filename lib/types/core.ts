@@ -80,7 +80,5 @@ export type PropCommonOpts = Pick<
   'exclude' | 'transform'
 > &
   Pick<PropertyOptions, 'validators'> & {
-    transform?: 'toClassOnly' | 'toPlainOnly' | 'both';
-  } & {
     private?: boolean;
   };

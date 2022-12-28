@@ -26,12 +26,12 @@ export type SoftDeleteOption = {
 };
 
 export type ListOptions = SoftDeleteOption & {
-  pipelines?: PipelineStage[];
-  match?: PipelineStage.Match['$match'];
+  pipeline?: PipelineStage[];
+  /* match?: PipelineStage.Match['$match'];
   sort?: PipelineStage.Sort['$sort'];
   project?: PipelineStage.Project['$project'];
   skip?: PipelineStage.Skip['$skip'];
-  limit?: PipelineStage.Limit['$limit'];
+  limit?: PipelineStage.Limit['$limit']; */
 };
 
 export type FindAllOptions<T> = SoftDeleteOption &
@@ -136,17 +136,7 @@ export abstract class BaseModel<TDocument extends Document> {
           query = model.aggregate<TDocument>();
         }
       }
-
-      options?.pipelines?.forEach((stage) => {
-        query.append(stage);
-      });
-
-      if (options?.match !== undefined) query.match(options.match);
-      if (options?.sort !== undefined) query.match(options.sort);
-      if (options?.project !== undefined) query.project(options.project);
-      if (options?.skip !== undefined) query.skip(options.skip);
-      if (options?.limit !== undefined) query.limit(options.limit);
-
+      if (options?.pipeline !== undefined) query.append(<any>(<unknown>options.pipeline));
       return await query.exec();
     } catch (err) {
       throw DatabaseHelper.dispatchError(err);

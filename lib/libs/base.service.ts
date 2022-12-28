@@ -22,6 +22,7 @@ import {
   SoftDeleteOption,
 } from './base.model';
 import { MetadataService } from '../metadata.service';
+import { LookupOpts } from '../decorators';
 
 type AutoParseOptions = {
   autoProjection?: boolean;
@@ -311,13 +312,37 @@ export abstract class BaseService<
   ): ListOptions {
     return {
       softDelete: options.softDelete,
-      limit: options.limit ?? 500,
-      skip: options.skip ?? 0,
-      match: options.filter,
-      sort: options.sort,
-      project: this._getProjection(returnAs),
-      pipelines: this._getPipelines(returnAs),
+      pipeline: this._getPipeline(returnAs, options),
     };
+  }
+
+  protected _getPipeline(
+    schema: Function | string,
+    options: ListDocuments = {},
+  ): Exclude<PipelineStage, PipelineStage.Merge | PipelineStage.Out>[] {
+    //const schemaName = typeof schema === 'string' ? schema : schema.name;
+    //if (!this._cachePipelines.has(schemaName)) {
+    const pipeline: Exclude<PipelineStage, PipelineStage.Merge | PipelineStage.Out>[] = [];
+    const schemaMetadata = this._metadata?.getSchema(schema);
+    if (schemaMetadata !== undefined) {
+      // Lookup
+      this._getLookupsAndUnwind(schemaMetadata).forEach((stage) => pipeline.push(stage));
+      // Match
+      if (options?.filter !== undefined) pipeline.push({ $match: options.filter });
+      // Sort
+      if (options?.sort !== undefined) pipeline.push({ $sort: options.sort });
+      // Projection
+      pipeline.push({ $project: this._getProjection(schema) });
+      // Skip
+      if (options?.skip !== undefined) pipeline.push({ $skip: options.skip });
+      // Limit
+      if (options?.limit !== undefined) pipeline.push({ $limit: options.limit });
+    }
+    //this._cachePipelines.set(schemaName, pipelines);
+    //}
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    //return this._cachePipelines.get(schemaName)!;
+    return pipeline;
   }
 
   protected _getProjection(schema: Function | string) {
@@ -349,55 +374,44 @@ export abstract class BaseService<
     return this._cacheProjections.get(schemaName)!;
   }
 
-  protected _getPipelines(schema: Function | string, parents: string[] = []) {
-    //const schemaName = typeof schema === 'string' ? schema : schema.name;
-    //if (!this._cachePipelines.has(schemaName)) {
-    const pipelines: PipelineStage[] = [];
-    const schemaMetadata = this._metadata?.getSchema(schema);
-    if (schemaMetadata !== undefined) {
-      this._getLookupsAndUnwind(schemaMetadata, pipelines, parents);
-    }
-    //this._cachePipelines.set(schemaName, pipelines);
-    //}
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //return this._cachePipelines.get(schemaName)!;
-    return pipelines;
-  }
-
   protected _getLookupsAndUnwind(
     schemaMetadata: SchemaDef,
-    pipelines: PipelineStage[],
-    parents: string[] = [],
-  ) {
+  ): Exclude<PipelineStage, PipelineStage.Merge | PipelineStage.Out>[] {
+    const pipeline: Exclude<PipelineStage, PipelineStage.Merge | PipelineStage.Out>[] = [];
     for (const [property, propDef] of schemaMetadata.props.entries()) {
-      const join = propDef.metadata.get(METADATA.MONGOOSE_LOOKUP);
-      if (join !== undefined) {
+      const lookup = propDef.metadata.get(METADATA.MONGOOSE_LOOKUP) as LookupOpts;
+      if (lookup !== undefined) {
         if (propDef.options.transformer?.expose || !propDef.options.transformer?.exclude) {
-          pipelines.push({
+          pipeline.push({
             $lookup: {
-              as: [...parents, property].join('.'),
-              from: join.from,
-              localField: [...parents, join.localField].join('.'),
-              foreignField: join.foreignField,
-              pipeline: [{ $project: this._getProjection(propDef.type?.type) }],
+              as: property,
+              from: lookup.from,
+              localField: lookup.localField,
+              foreignField: lookup.foreignField,
+              pipeline: this._getPipeline(propDef.type?.type, {
+                limit: lookup.justOne ? 1 : undefined,
+              }),
             },
           });
-          if (join.justOne === true) {
-            pipelines.push({
+          if ((lookup.justOne ?? false) === true) {
+            pipeline.push({
               $unwind: {
-                path: '$' + [...parents, property].join('.'),
-                preserveNullAndEmptyArrays: join.preserveNullAndEmptyArrays,
+                path: '$' + property,
+                preserveNullAndEmptyArrays: lookup.preserveNullAndEmptyArrays ?? false,
               },
             });
           }
           // Has nested childs?
+          /*
           const nestedPipelines = this._getPipelines(propDef.type?.type, [...parents, property]);
           nestedPipelines.forEach((stage) => {
-            pipelines.push(stage);
+            pipeline.push(stage);
           });
+          */
         }
       }
     }
+    return pipeline;
   }
 
   getDefaultOptions<V>(
