@@ -25,13 +25,8 @@ export type SoftDeleteOption = {
   softDelete?: SoftDeleteEnum;
 };
 
-export type ListOptions = SoftDeleteOption & {
+export type AggregateOptions = SoftDeleteOption & {
   pipeline?: PipelineStage[];
-  /* match?: PipelineStage.Match['$match'];
-  sort?: PipelineStage.Sort['$sort'];
-  project?: PipelineStage.Project['$project'];
-  skip?: PipelineStage.Skip['$skip'];
-  limit?: PipelineStage.Limit['$limit']; */
 };
 
 export type FindAllOptions<T> = SoftDeleteOption &
@@ -39,23 +34,17 @@ export type FindAllOptions<T> = SoftDeleteOption &
   Pick<QueryOptions<T>, 'projection'> &
   Pick<QueryOptions<T>, 'skip'> &
   Pick<QueryOptions<T>, 'limit'> &
-  Pick<QueryOptions<T>, 'sort'> &
-  Pick<QueryOptions<T>, 'populate'> &
-  Pick<QueryOptions<T>, 'hint'>;
+  Pick<QueryOptions<T>, 'sort'>;
 
 export type FindOneOptions<T> = SoftDeleteOption &
   ToObjectOption &
   Pick<QueryOptions<T>, 'projection'> &
   Pick<QueryOptions<T>, 'skip'> &
-  Pick<QueryOptions<T>, 'sort'> &
-  Pick<QueryOptions<T>, 'populate'> &
-  Pick<QueryOptions<T>, 'hint'>;
+  Pick<QueryOptions<T>, 'sort'>;
 
 export type FindByIdOptions<T> = SoftDeleteOption &
   ToObjectOption &
-  Pick<QueryOptions<T>, 'projection'> &
-  Pick<QueryOptions<T>, 'populate'> &
-  Pick<QueryOptions<T>, 'hint'>;
+  Pick<QueryOptions<T>, 'projection'>;
 
 export type ExistsOption = SoftDeleteOption;
 
@@ -76,22 +65,10 @@ export type DeleteManyOptions = ImplementSoftDelete;
 export type DeleteOneOptions = ImplementSoftDelete;
 export type DeleteOptions = ImplementSoftDelete;
 
-/* TODO: implementar abstraccion para soportar nuevas funciones
-export type DeleteManyOptions = SoftDeleteOption &
-  Pick<QueryOptions, 'skip'> &
-  Pick<QueryOptions, 'limit'> &
-  Pick<QueryOptions, 'sort'> &
-  Pick<QueryOptions, 'hint'>;*/
-
 export interface DeleteResult {
   acknowledged: boolean;
   deletedCount: number;
 }
-
-/*
-export type TModel<TDocument> = TDocument extends SoftDeleteDocument
-  ? SoftDeleteModel<TDocument>
-  : Model<TDocument>;*/
 
 /**
  * Servicio de modelo base.
@@ -117,7 +94,7 @@ export abstract class BaseModel<TDocument extends Document> {
   /**
    * List documents
    */
-  async list(options?: ListOptions) {
+  async aggregate(options?: AggregateOptions) {
     try {
       let query: Aggregate<TDocument[]>;
       if (!this._implementSoftDelete) {
@@ -161,22 +138,17 @@ export abstract class BaseModel<TDocument extends Document> {
         const model = <SoftDeleteModel<SoftDeleteDocument>>(<unknown>this._model);
         if (options?.softDelete === SoftDeleteEnum.ALL) {
           // find all documents - deleted and not deleted
-          //query = model.aggregateWithDeleted();
           query = model.findWithDeleted(filter, options.projection ?? null, newOpts);
         } else if (options?.softDelete === SoftDeleteEnum.ONLY_DELETED) {
           // find only deleted documents
-          //query = model.aggregateWithDeleted();
           query = model.findDeleted(filter, options.projection ?? null, newOpts);
         } else {
           // default - find only not deleted documents
-          //query = model.aggregate();
           query = model.find(filter, options?.projection ?? null, newOpts);
         }
       }
 
-      const result = !options?.toObject
-        ? await query.exec()
-        : await query.lean({ virtuals: true }).exec();
+      const result = !options?.toObject ? await query.exec() : await query.lean().exec();
 
       return result;
     } catch (err) {
@@ -189,7 +161,7 @@ export abstract class BaseModel<TDocument extends Document> {
    */
   async findOne(filter: FilterQuery<TDocument> = {}, options?: FindOneOptions<TDocument>) {
     const result = await this.findAll(filter, { ...options, limit: 1 });
-    return result && Array.isArray(result) && result.length === 1 ? result.shift() || null : null;
+    return result && Array.isArray(result) && result.length >= 1 ? result.shift() || null : null;
   }
 
   /**
@@ -249,15 +221,13 @@ export abstract class BaseModel<TDocument extends Document> {
   }
 
   /**
-   * Insert and return a new document
+   * Insert and return the id of new document
    */
   async insert(data: Partial<TDocument>, options?: InsertOptions) {
     try {
       const model = <Model<TDocument>>(<unknown>this._model);
       const result = await model.create(data);
-      return result && options?.toObject
-        ? result.toObject({ flattenMaps: true, virtuals: true })
-        : result;
+      return result;
     } catch (err: any) {
       throw DatabaseHelper.dispatchError(err);
     }
@@ -266,13 +236,11 @@ export abstract class BaseModel<TDocument extends Document> {
   /**
    * Insert and return many new documents
    */
-  async insertMany(data: Partial<TDocument>[], options?: InsertManyOptions) {
+  async insertMany(data: Partial<TDocument>[]) {
     try {
       const model = <Model<TDocument>>(<unknown>this._model);
-      const result = await model.insertMany(data);
-      return result && options?.toObject
-        ? result.map((document) => document.toObject({ flattenMaps: true }))
-        : result;
+      const result = await model.insertMany(data, { rawResult: true });
+      return result;
     } catch (err: any) {
       throw DatabaseHelper.dispatchError(err);
     }
@@ -348,7 +316,7 @@ export abstract class BaseModel<TDocument extends Document> {
         const model = <Model<TDocument>>(<unknown>this._model);
         return !options?.toObject
           ? await model.findByIdAndUpdate(id, data, opts).exec()
-          : await model.findByIdAndUpdate(id, data, opts).lean({ virtuals: true }).exec();
+          : await model.findByIdAndUpdate(id, data, opts).lean().exec();
       }
 
       const model = <SoftDeleteModel<SoftDeleteDocument>>(<unknown>this._model);
@@ -357,24 +325,18 @@ export abstract class BaseModel<TDocument extends Document> {
         // update document - deleted and not deleted
         return !options?.toObject
           ? await model.findOneAndUpdateWithDeleted({ _id: id }, data, opts).exec()
-          : await model
-              .findOneAndUpdateWithDeleted({ _id: id }, data, opts)
-              .lean({ virtuals: true })
-              .exec();
+          : await model.findOneAndUpdateWithDeleted({ _id: id }, data, opts).lean().exec();
       } else if (options?.softDelete === SoftDeleteEnum.ONLY_DELETED) {
         // update only deleted document
         return !options?.toObject
           ? await model.findOneAndUpdateDeleted({ _id: id }, data, opts).exec()
-          : await model
-              .findOneAndUpdateDeleted({ _id: id }, data, opts)
-              .lean({ virtuals: true })
-              .exec();
+          : await model.findOneAndUpdateDeleted({ _id: id }, data, opts).lean().exec();
       }
 
       // default - update only not deleted document
       return !options?.toObject
         ? await model.findOneAndUpdate({ _id: id }, data, opts).exec()
-        : await model.findOneAndUpdate({ _id: id }, data, opts).lean({ virtuals: true }).exec();
+        : await model.findOneAndUpdate({ _id: id }, data, opts).lean().exec();
     } catch (err: any) {
       throw DatabaseHelper.dispatchError(err);
     }

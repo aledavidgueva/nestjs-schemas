@@ -6,39 +6,39 @@ import { $Metadata } from './metadata.decorator';
 import { METADATA } from '../../constants/metadata.const';
 
 type PropSubSchemaCommonOpts = PropCommonOpts & {
-  lookup: Omit<LookupOpts, 'justOne'>;
+  lookup: Omit<LookupOpts, 'justOne'> | string;
 };
 
 export type LookupOpts = {
   from: string;
-  localField: string;
-  foreignField: string;
+  localField?: string;
+  foreignField?: string;
   preserveNullAndEmptyArrays?: boolean;
   justOne?: boolean;
 };
 
-export type PropSubSchemaOpts = PropSubSchemaCommonOpts & {
-  default?: undefined;
+export type PropSubSchemaOpts<T> = PropSubSchemaCommonOpts & {
+  default?: T;
 };
 export type PropSubSchemaOptionalOpts<T> = PropSubSchemaCommonOpts & {
   default?: Nullable<T>;
 };
-export type PropSubSchemaArrayOpts = PropSubSchemaCommonOpts & {
-  default?: undefined;
+export type PropSubSchemaArrayOpts<T> = PropSubSchemaCommonOpts & {
+  default?: T[];
 };
 export type PropSubSchemaArrayOptionalOpts<T> = PropSubSchemaCommonOpts & {
   default?: Nullable<T[]>;
 };
 
 type SetPropOptions<T> =
-  | PropSubSchemaOpts
+  | PropSubSchemaOpts<T>
   | PropSubSchemaOptionalOpts<T>
-  | PropSubSchemaArrayOpts
+  | PropSubSchemaArrayOpts<T>
   | PropSubSchemaArrayOptionalOpts<T>;
 
 export function $PropSubSchema<T>(
   subSchema: ClassConstructor<T>,
-  opts: PropSubSchemaOpts,
+  opts: PropSubSchemaOpts<T>,
 ): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
@@ -56,7 +56,7 @@ export function $PropSubSchema<T>(
 
 export function $PropSubSchemaArray<T>(
   subSchema: ClassConstructor<T>,
-  opts: PropSubSchemaArrayOpts,
+  opts: PropSubSchemaArrayOpts<T>,
 ): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
@@ -137,11 +137,29 @@ function setProp<T>(
     },
     validators: [],
     decorators: {
-      __propDef: [
-        $Metadata<LookupOpts>(METADATA.MONGOOSE_LOOKUP, { ...opts.lookup, justOne: !opts.isArray }),
-      ],
+      __propDef: [],
     },
   };
+
+  // Configure lookup
+  const lookup: LookupOpts = {
+    from: typeof opts.lookup === 'string' ? opts.lookup : opts.lookup.from,
+    localField: property,
+    foreignField: '_id',
+    justOne: !opts.isArray,
+    preserveNullAndEmptyArrays: opts.isOptional,
+  };
+
+  if (typeof opts.lookup !== 'string') {
+    if (opts.lookup.localField) lookup.localField = opts.lookup.localField;
+    if (opts.lookup.foreignField) lookup.foreignField = opts.lookup.foreignField;
+    if (opts.lookup.preserveNullAndEmptyArrays)
+      lookup.preserveNullAndEmptyArrays = opts.lookup.preserveNullAndEmptyArrays;
+  }
+
+  prop.decorators!.__propDef.push(
+    $Metadata<NonNullable<LookupOpts>>(METADATA.MONGOOSE_LOOKUP, lookup),
+  );
 
   // User custom transform chain fn
   if (opts.transform !== undefined) {

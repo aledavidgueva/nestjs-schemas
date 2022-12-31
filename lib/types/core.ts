@@ -12,7 +12,7 @@ import {
 
 export type Nullable<T> = T | null;
 
-export class ObjectId extends mongoose.Types.ObjectId {}
+export import ObjectId = mongoose.Types.ObjectId;
 
 export type PropType = {
   type: string;

@@ -8,8 +8,6 @@ import {
   InsertManyOptions,
   InsertOptions,
   FindAllOptions,
-  FindOneOptions,
-  FindByIdOptions,
   UpdateManyOptions,
   UpdateOneOptions,
   UpdateOptions,
@@ -18,19 +16,21 @@ import {
   DeleteManyOptions,
   ExistsOption,
   CountOptions,
-  ListOptions,
   SoftDeleteOption,
 } from './base.model';
 import { MetadataService } from '../metadata.service';
 import { LookupOpts } from '../decorators';
 
-type AutoParseOptions = {
-  autoProjection?: boolean;
-  autoPopulate?: boolean;
+export type FindAllDocumentsOpts<T> = Omit<FindAllOptions<T>, 'toObject' | 'projection'> & {
+  filter?: FilterQuery<any>;
+  returnAs?: ClassConstructor<T>;
+  transformOptions?: ClassTransformOptions;
 };
+export type FindOneDocumentOpts<T> = Omit<FindAllDocumentsOpts<T>, 'limit'>;
+export type FindDocumentByIdOpts<T> = Omit<FindOneDocumentOpts<T>, 'filter'>;
 
 export type ListDocuments = {
-  filter?: PipelineStage.Match['$match'];
+  match?: PipelineStage.Match['$match'];
   sort?: PipelineStage.Sort['$sort'];
   projection?: PipelineStage.Project['$project'];
   skip?: PipelineStage.Skip['$skip'];
@@ -79,6 +79,7 @@ export abstract class BaseService<
     } catch (err) {}
   } */
 
+  /*
   async listDocuments<V = TReturnDto>(options?: ListDocumentsOptions<V>): Promise<V[]> {
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
     const listOptions = this._createListOptions(returnAs, options);
@@ -88,22 +89,28 @@ export abstract class BaseService<
       ...options?.transformOptions,
     }));
   }
+  */
 
   /**
    * Find many documents
    */
-  async findAllDocuments<V = TReturnDto>(
-    filter: FilterQuery<TDocument> = {},
-    options?: FindAllOptions<TDocument> & {
-      returnAs?: ClassConstructor<V>;
-      transformOptions?: ClassTransformOptions;
-    } & AutoParseOptions,
-  ): Promise<V[]> {
+  async findAllDocuments<V = TReturnDto>(options?: FindAllDocumentsOpts<V>): Promise<V[]> {
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
-    const result = await this._model.findAll(filter, {
-      ...options,
-      ...this.getDefaultOptions<V>(returnAs, options),
-    });
+
+    // use find or aggregate?
+    let result;
+    if (!this._hasSubSchemas(returnAs)) {
+      result = await this._model.findAll(options?.filter, {
+        ...options,
+        ...this._getDefaultOptions<V>(returnAs),
+      });
+    } else {
+      result = await this._model.aggregate({
+        softDelete: options?.softDelete,
+        pipeline: this._getDefaultPipeline(returnAs, options),
+      });
+    }
+
     return <V[]>(<unknown>plainToInstance(returnAs, result, {
       ...this.defaultTransformOptions,
       ...options?.transformOptions,
@@ -113,22 +120,9 @@ export abstract class BaseService<
   /**
    * Find a single document
    */
-  async findOneDocument<V = TReturnDto>(
-    filter: FilterQuery<TDocument> = {},
-    options?: FindOneOptions<TDocument> & {
-      returnAs?: ClassConstructor<V>;
-      transformOptions?: ClassTransformOptions;
-    } & AutoParseOptions,
-  ): Promise<V | null> {
-    const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
-    const result = await this._model.findOne(filter, {
-      ...options,
-      ...this.getDefaultOptions<V>(returnAs, options),
-    });
-    return <V>(<unknown>plainToInstance(returnAs, result, {
-      ...this.defaultTransformOptions,
-      ...options?.transformOptions,
-    }));
+  async findOneDocument<V = TReturnDto>(options?: FindOneDocumentOpts<V>): Promise<V | null> {
+    const result = await this.findAllDocuments({ ...options, limit: 1 });
+    return result && Array.isArray(result) && result.length >= 1 ? result.shift() ?? null : null;
   }
 
   /**
@@ -136,20 +130,9 @@ export abstract class BaseService<
    */
   async findDocumentById<V = TReturnDto>(
     id: ObjectId,
-    options?: FindByIdOptions<TDocument> & {
-      returnAs?: ClassConstructor<V>;
-      transformOptions?: ClassTransformOptions;
-    } & AutoParseOptions,
+    options?: FindDocumentByIdOpts<V>,
   ): Promise<V | null> {
-    const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
-    const result = await this._model.findById(id, {
-      ...options,
-      ...this.getDefaultOptions<V>(returnAs, options),
-    });
-    return <V>(<unknown>plainToInstance(returnAs, result, {
-      ...this.defaultTransformOptions,
-      ...options?.transformOptions,
-    }));
+    return await this.findOneDocument({ ...options, filter: { _id: id } });
   }
 
   /**
@@ -160,15 +143,17 @@ export abstract class BaseService<
     options?: InsertOptions & {
       returnAs?: ClassConstructor<V>;
       transformOptions?: ClassTransformOptions;
-    } & AutoParseOptions,
+    },
   ): Promise<V> {
     data = await this.beforeSave<Partial<TDocument>>(data);
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
     const result = await this._model.insert(data, {
       ...options,
-      ...this.getDefaultOptions<V>(returnAs, options),
+      ...this._getDefaultOptions<V>(returnAs),
     });
-    return plainToInstance(returnAs, result, {
+
+    const doc = !this._hasSubSchemas(returnAs) ? result : await this.findDocumentById(result._id);
+    return plainToInstance(returnAs, doc, {
       ...this.defaultTransformOptions,
       ...options?.transformOptions,
     });
@@ -177,20 +162,34 @@ export abstract class BaseService<
   /**
    * Create many new documents
    */
-  async createManyDocuments<V = TReturnDto>(
+  async createManyDocuments<V = TReturnDto>(data: Partial<TDocument>[]) {
+    data = await this.beforeSave(data);
+    const result = await this._model.insertMany(data);
+    return result;
+  }
+
+  /**
+   * Create many new documents
+   */
+  async createManyDocumentsAndReturnIt<V = TReturnDto>(
     data: Partial<TDocument>[],
     options?: InsertManyOptions & {
       returnAs?: ClassConstructor<V>;
       transformOptions?: ClassTransformOptions;
-    } & AutoParseOptions,
+    },
   ): Promise<V[]> {
-    data = await this.beforeSave(data);
+    const result = await this.createManyDocuments(data);
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
-    const result = await this._model.insertMany(data, {
-      ...options,
-      ...this.getDefaultOptions<V>(returnAs, options),
-    });
-    return <V[]>(<unknown>plainToInstance(returnAs, result, {
+
+    // make list
+    const list: ObjectId[] = [];
+    for (const k in result.insertedIds) {
+      list.push(<ObjectId>(<unknown>result.insertedIds[k]));
+    }
+
+    const docs = await this.findAllDocuments({ filter: { _id: { $in: list } } });
+
+    return <V[]>(<unknown>plainToInstance(returnAs, docs, {
       ...this.defaultTransformOptions,
       ...options?.transformOptions,
     }));
@@ -205,15 +204,17 @@ export abstract class BaseService<
     options?: UpdateOptions & {
       returnAs?: ClassConstructor<V>;
       transformOptions?: ClassTransformOptions;
-    } & AutoParseOptions,
+    },
   ): Promise<V | null> {
     data = await this.beforeSave(data);
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
     const result = await this._model.update(id, data, {
       ...options,
-      ...this.getDefaultOptions<V>(returnAs, options),
+      ...this._getDefaultOptions<V>(returnAs),
     });
-    return plainToInstance(returnAs, result, {
+    const doc =
+      !result || !this._hasSubSchemas(returnAs) ? result : await this.findDocumentById(result._id);
+    return plainToInstance(returnAs, doc, {
       ...this.defaultTransformOptions,
       ...options?.transformOptions,
     });
@@ -228,7 +229,7 @@ export abstract class BaseService<
     options?: UpdateManyOptions & {
       returnAs?: ClassConstructor<V>;
       transformOptions?: ClassTransformOptions;
-    } & AutoParseOptions,
+    },
   ) {
     return await this._model.updateMany(filter, data, options);
   }
@@ -241,7 +242,7 @@ export abstract class BaseService<
     data: Partial<TDocument>,
     options?: UpdateOneOptions & { returnAs?: ClassConstructor<V> } & {
       transformOptions?: ClassTransformOptions;
-    } & AutoParseOptions,
+    },
   ) {
     return await this._model.updateOne(filter, data, options);
   }
@@ -261,7 +262,7 @@ export abstract class BaseService<
   }
 
   /**
-   * Delete and return a single document by id
+   * Delete and return affected
    */
   async deleteDocument(id: ObjectId, options?: DeleteOptions) {
     const result = <any>(<unknown>await this._model.delete(id, options));
@@ -306,24 +307,14 @@ export abstract class BaseService<
     return data;
   }
 
-  protected _createListOptions<V>(
-    returnAs: ClassConstructor<V>,
-    options: ListDocumentsOptions<V> = {},
-  ): ListOptions {
-    return {
-      softDelete: options.softDelete,
-      pipeline: this._getPipeline(returnAs, options),
-    };
-  }
-
-  protected _getPipeline(
-    schema: Function | string,
-    options: ListDocuments = {},
+  protected _getDefaultPipeline<T = TReturnDto>(
+    schema: string | Function,
+    options: Partial<Omit<FindAllDocumentsOpts<T>, 'returnAs' | 'transformOptions'>> = {},
   ): Exclude<PipelineStage, PipelineStage.Merge | PipelineStage.Out>[] {
     //const schemaName = typeof schema === 'string' ? schema : schema.name;
     //if (!this._cachePipelines.has(schemaName)) {
     const pipeline: Exclude<PipelineStage, PipelineStage.Merge | PipelineStage.Out>[] = [];
-    const schemaMetadata = this._metadata?.getSchema(schema);
+    const schemaMetadata = this._metadata.getSchema(schema);
     if (schemaMetadata !== undefined) {
       // Lookup
       this._getLookupsAndUnwind(schemaMetadata).forEach((stage) => pipeline.push(stage));
@@ -349,7 +340,7 @@ export abstract class BaseService<
     const schemaName = typeof schema === 'string' ? schema : schema.name;
     if (!this._cacheProjections.has(schemaName)) {
       const projection: { [field: string]: number } = {};
-      const schemaMetadata = this._metadata?.getSchema(schema);
+      const schemaMetadata = this._metadata.getSchema(schema);
       if (schemaMetadata !== undefined) {
         for (const [property, propDef] of schemaMetadata.props.entries()) {
           if (propDef.options.transformer?.expose || !propDef.options.transformer?.exclude) {
@@ -384,11 +375,11 @@ export abstract class BaseService<
         if (propDef.options.transformer?.expose || !propDef.options.transformer?.exclude) {
           pipeline.push({
             $lookup: {
-              as: property,
               from: lookup.from,
+              as: property,
               localField: lookup.localField,
               foreignField: lookup.foreignField,
-              pipeline: this._getPipeline(propDef.type?.type, {
+              pipeline: this._getDefaultPipeline(propDef.type?.type, {
                 limit: lookup.justOne ? 1 : undefined,
               }),
             },
@@ -414,17 +405,25 @@ export abstract class BaseService<
     return pipeline;
   }
 
-  getDefaultOptions<V>(
-    returnAs: ClassConstructor<V>,
-    options?: { projection?: any; populate?: any } & AutoParseOptions,
-  ) {
-    const defaultOptions: any = {
-      toObject: true,
-    };
-    if (options?.autoProjection !== false && !options?.projection) {
-      defaultOptions.projection = this._getProjection(returnAs);
+  /**
+   * Detect if schema has props with subschemas
+   */
+  public _hasSubSchemas(schema: Function | string): boolean {
+    const schemaMetadata = this._metadata.getSchema(schema);
+    if (schemaMetadata !== undefined) {
+      for (const [property, propDef] of schemaMetadata.props.entries()) {
+        const lookup = propDef.metadata.get(METADATA.MONGOOSE_LOOKUP) as LookupOpts;
+        if (lookup !== undefined) return true;
+      }
     }
-    return defaultOptions;
+    return false;
+  }
+
+  protected _getDefaultOptions<V>(returnAs: ClassConstructor<V>) {
+    return {
+      toObject: true,
+      projection: this._getProjection(returnAs),
+    };
   }
 
   get model() {

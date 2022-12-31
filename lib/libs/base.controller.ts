@@ -1,10 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
 import { ClassConstructor } from 'class-transformer';
-import { FilterQuery, Document } from 'mongoose';
-import { ListParams } from '../schemas';
+import { Document } from 'mongoose';
 import { ObjectId } from '../types';
-import { BaseModel, DeleteOptions, ListOptions } from './base.model';
-import { BaseService } from './base.service';
+import { BaseModel, DeleteOptions } from './base.model';
+import { BaseService, FindAllDocumentsOpts, FindDocumentByIdOpts } from './base.service';
 
 /**
  * Gateway entre request y servicios.
@@ -19,7 +18,7 @@ export abstract class BaseController<
 > {
   constructor(protected readonly _service: TService) {}
 
-  protected async _list<V = TReturnDto>(
+  /*   protected async _list<V = TReturnDto>(
     options: ListParams<TDocument> & {
       returnAs?: ClassConstructor<V>;
     } = {},
@@ -35,25 +34,17 @@ export abstract class BaseController<
     delete options.query;
 
     return await this._service.findAllDocuments<V>(filter, options);
-  }
+  } */
 
-  protected async _findAll<V = TReturnDto>(
-    filter: FilterQuery<TDocument> = {},
-    options?: ListOptions & {
-      returnAs?: ClassConstructor<V>;
-    },
-  ) {
-    return await this._service.findAllDocuments<V>(filter, { ...options });
+  protected async _findAll<V = TReturnDto>(options?: FindAllDocumentsOpts<V>) {
+    return await this._service.findAllDocuments<V>(options);
   }
 
   /**
    * Find resource by ID
    */
-  protected async _findById<V = TReturnDto>(
-    id: ObjectId,
-    options?: { returnAs?: ClassConstructor<V> },
-  ) {
-    const document = await this._service.findDocumentById<V>(id, { ...options });
+  protected async _findById<V = TReturnDto>(id: ObjectId, options?: FindDocumentByIdOpts<V>) {
+    const document = await this._service.findDocumentById<V>(id, options);
     if (!document) throw new NotFoundException();
     return document;
   }

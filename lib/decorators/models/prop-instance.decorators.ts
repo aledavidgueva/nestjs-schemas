@@ -6,16 +6,16 @@ import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../..
 
 type PropInstanceCommonOpts = PropCommonOpts & {};
 
-export type PropInstanceOpts = PropInstanceCommonOpts & {
-  default?: undefined;
+export type PropInstanceOpts<T> = PropInstanceCommonOpts & {
+  default?: T;
 };
 
 export type PropInstanceOptionalOpts<T> = PropInstanceCommonOpts & {
   default?: Nullable<T>;
 };
 
-export type PropInstanceArrayOpts = PropInstanceCommonOpts & {
-  default?: undefined;
+export type PropInstanceArrayOpts<T> = PropInstanceCommonOpts & {
+  default?: T[];
 };
 
 export type PropInstanceArrayOptionalOpts<T> = PropInstanceCommonOpts & {
@@ -23,14 +23,14 @@ export type PropInstanceArrayOptionalOpts<T> = PropInstanceCommonOpts & {
 };
 
 type SetPropOptions<T> =
-  | PropInstanceOpts
+  | PropInstanceOpts<T>
   | PropInstanceOptionalOpts<T>
-  | PropInstanceArrayOpts
+  | PropInstanceArrayOpts<T>
   | PropInstanceArrayOptionalOpts<T>;
 
 export function $PropInstance<T>(
   type: ClassConstructor<T>,
-  opts: PropInstanceOpts = {},
+  opts: PropInstanceOpts<T> = {},
 ): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
@@ -48,7 +48,7 @@ export function $PropInstance<T>(
 
 export function $PropInstanceArray<T>(
   type: ClassConstructor<T>,
-  opts: PropInstanceArrayOpts = {},
+  opts: PropInstanceArrayOpts<T> = {},
 ): PropertyDecorator {
   return (target: any, property: any) => {
     setProp(
