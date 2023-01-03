@@ -4,12 +4,12 @@ import { QueryOptions } from 'mongoose';
 import { TransformToPojo } from '../helpers';
 
 @$Schema()
-export class ListParams<T = any> {
+export class ListParamsDto<T = any> {
   @$PropNumberOptional({ min: 1, isInt: true })
   limit?: number;
 
   @$PropNumberOptional({ min: 0, isInt: true })
-  skip?: number;
+  offset?: number;
 
   @$Prop({
     swagger: { type: 'object', required: false },

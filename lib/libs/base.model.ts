@@ -95,8 +95,21 @@ export abstract class BaseModel<TDocument extends Document> {
    * List documents
    */
   async aggregate(options?: AggregateOptions) {
+    return await this._aggregate({ ...options, returnCount: false });
+  }
+
+  /**
+   * Count aggregate documents
+   */
+  async aggregateAndCount(options?: AggregateOptions) {
+    return await this._aggregate({ ...options, returnCount: true });
+  }
+
+  async _aggregate(options?: AggregateOptions & { returnCount: true }): Promise<number>;
+  async _aggregate(options?: AggregateOptions & { returnCount: false }): Promise<TDocument[]>;
+  async _aggregate(options?: AggregateOptions & { returnCount: unknown }): Promise<unknown> {
     try {
-      let query: Aggregate<TDocument[]>;
+      let query: Aggregate<any>;
       if (!this._implementSoftDelete) {
         const model = <Model<TDocument>>(<unknown>this._model);
         query = model.aggregate<TDocument>();
@@ -114,7 +127,16 @@ export abstract class BaseModel<TDocument extends Document> {
         }
       }
       if (options?.pipeline !== undefined) query.append(<any>(<unknown>options.pipeline));
-      return await query.exec();
+
+      if (options?.returnCount) {
+        query.count('total');
+      }
+      const result = await query.exec();
+      if (options?.returnCount) {
+        return result[0].total as number;
+      } else {
+        return result as TDocument[];
+      }
     } catch (err) {
       throw DatabaseHelper.dispatchError(err);
     }

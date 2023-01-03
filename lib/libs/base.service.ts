@@ -20,6 +20,7 @@ import {
 } from './base.model';
 import { MetadataService } from '../metadata.service';
 import { LookupOpts } from '../decorators';
+import { PaginatedResponseDto } from '../schemas';
 
 export type FindAllDocumentsOpts<T> = Omit<FindAllOptions<T>, 'toObject' | 'projection'> & {
   filter?: FilterQuery<any>;
@@ -29,19 +30,26 @@ export type FindAllDocumentsOpts<T> = Omit<FindAllOptions<T>, 'toObject' | 'proj
 export type FindOneDocumentOpts<T> = Omit<FindAllDocumentsOpts<T>, 'limit'>;
 export type FindDocumentByIdOpts<T> = Omit<FindOneDocumentOpts<T>, 'filter'>;
 
-export type ListDocuments = {
-  match?: PipelineStage.Match['$match'];
-  sort?: PipelineStage.Sort['$sort'];
-  projection?: PipelineStage.Project['$project'];
-  skip?: PipelineStage.Skip['$skip'];
-  limit?: PipelineStage.Limit['$limit'];
-};
+export type CountComplexDocumentsOpts<T> = Omit<
+  FindAllDocumentsOpts<T>,
+  'limit' | 'sort' | 'transformOptions' | 'skip'
+>;
 
-export type ListDocumentsOptions<V> = ListDocuments &
-  SoftDeleteOption & {
-    returnAs?: ClassConstructor<V>;
-    transformOptions?: ClassTransformOptions;
-  };
+export type ListAllDocumentsOpts<T> = {
+  searchQuery?: string;
+  limit: PipelineStage.Limit['$limit'];
+  offset: PipelineStage.Skip['$skip'];
+  sort?: PipelineStage.Sort['$sort'];
+  returnAs?: ClassConstructor<T>;
+  transformOptions?: ClassTransformOptions;
+} & SoftDeleteOption;
+
+export type SearchResults<V> = {
+  total: number;
+  filtered: number;
+  showing: number;
+  data: V[];
+};
 
 /**
  * Proveedor de funciones relacionadas al módulo.
@@ -56,7 +64,7 @@ export abstract class BaseService<
 > {
   defaultTransformOptions: ClassTransformOptions = defaultTransformOptions;
 
-  protected _cacheProjections: Map<string, PipelineStage.Project['$project']> = new Map();
+  protected _cacheProjections: Map<string, any> = new Map();
 
   protected _cachePipelines: Map<string, PipelineStage[]> = new Map();
 
@@ -73,23 +81,102 @@ export abstract class BaseService<
     return this._model.isSoftDeleteEnabled();
   }
 
-  /*   async validateListParams<T = TDocument>(params: ListParams<T>, doc: ClassConstructor<T>) {
+  cleanInputString(query: string = '') {
+    let newString = String(query);
     try {
-      return;
-    } catch (err) {}
-  } */
+      // limpieza
+      newString = newString
+        .trim()
+        .replace(/°/g, 'º')
+        .replace(/[^\w\s+\-.,;:°ºª_"\/@<>=]/giu, '');
+      if (!newString || typeof newString !== 'string') newString = '';
+      // quitar espacios en blanco duplicados
+      newString = newString.replace(/\s{2,}/g, ' ');
+    } catch (err) {
+      newString = '';
+    }
 
-  /*
-  async listDocuments<V = TReturnDto>(options?: ListDocumentsOptions<V>): Promise<V[]> {
-    const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
-    const listOptions = this._createListOptions(returnAs, options);
-    const result = await this._model.list(listOptions);
-    return <V[]>(<unknown>plainToInstance(returnAs, result, {
-      ...this.defaultTransformOptions,
-      ...options?.transformOptions,
-    }));
+    return newString;
   }
-  */
+
+  createFilterBySearchQuery<V = TReturnDto>(
+    query: string = '',
+    returnAs: ClassConstructor<V>,
+  ): FilterQuery<any> {
+    // regexp para validar y obtener términos de busqueda
+    const regex = /"([^"]+)"|([^"\s]+)/g;
+
+    const input = this.cleanInputString(query);
+    const matches = input.match(regex);
+
+    const terms: string[] = [];
+    if (matches !== null) {
+      for (const match of matches) {
+        terms.push(match.replace(/(^"|"$)/g, ''));
+      }
+    }
+
+    const filter: FilterQuery<any> = {};
+    const $and: FilterQuery<any>[] = [];
+
+    const projection = this.__getProjection(returnAs, false, [], 'type');
+
+    for (const term of terms) {
+      const $or: FilterQuery<any>[] = [];
+      for (const path in projection) {
+        if (projection[path] === 'String' || projection[path] === 'SchemaString') {
+          const def: FilterQuery<any> = {};
+          def[path] = { $regex: new RegExp('.*' + this._regexScape(term) + '.*', 'iu') };
+          $or.push(def);
+        }
+      }
+      if ($or.length) $and.push({ $or: $or });
+    }
+
+    if ($and.length) filter['$and'] = $and;
+
+    return filter;
+  }
+
+  protected _regexScape(input: string = '') {
+    return input.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&');
+  }
+
+  async listAllDocuments<V = TReturnDto>(
+    options: ListAllDocumentsOpts<V>,
+  ): Promise<PaginatedResponseDto<V>> {
+    const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
+    const filter: FilterQuery<any> = this.createFilterBySearchQuery(options?.searchQuery, returnAs);
+    const resp = new PaginatedResponseDto<V>();
+
+    resp.total = await this.countComplexDocuments({
+      returnAs: options.returnAs,
+
+      softDelete: options.softDelete,
+    });
+
+    resp.filtered = await this.countComplexDocuments({
+      filter,
+      returnAs: options.returnAs,
+      softDelete: options.softDelete,
+    });
+
+    const data = await this.findAllDocuments({
+      ...options,
+      skip: options.offset,
+      filter,
+      returnAs,
+    });
+
+    resp.showing = data.length;
+
+    resp.limit = options.limit;
+    resp.offset = options.offset;
+
+    resp.data = data;
+
+    return resp;
+  }
 
   /**
    * Find many documents
@@ -290,6 +377,19 @@ export abstract class BaseService<
     return await this._model.count(filter, options);
   }
 
+  /**
+   * Count documents with subschemas
+   */
+  async countComplexDocuments<V = TReturnDto>(
+    options?: CountComplexDocumentsOpts<V>,
+  ): Promise<number> {
+    const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
+    return await this._model.aggregateAndCount({
+      softDelete: options?.softDelete,
+      pipeline: this._getDefaultPipeline(returnAs, options),
+    });
+  }
+
   protected calcAffectedDocuments(result: any) {
     let affected = 0;
     if (result.insertedCount) affected += result.insertedCount;
@@ -337,32 +437,47 @@ export abstract class BaseService<
   }
 
   protected _getProjection(schema: Function | string) {
-    const schemaName = typeof schema === 'string' ? schema : schema.name;
-    if (!this._cacheProjections.has(schemaName)) {
-      const projection: { [field: string]: number } = {};
+    return this.__getProjection(schema);
+  }
+
+  protected _getFullProjection(schema: Function | string) {
+    return this.__getProjection(schema, false);
+  }
+
+  protected __getProjection(
+    schema: Function | string,
+    onlyTopLevel: boolean = true,
+    parents: string[] = [],
+    value: 1 | 'type' = 1,
+  ) {
+    let schemaKey = typeof schema === 'string' ? schema : schema.name;
+    schemaKey += onlyTopLevel ? '_top_' + value : '_full_' + value;
+    if (!this._cacheProjections.has(schemaKey)) {
+      let projection: { [field: string]: any } = {};
       const schemaMetadata = this._metadata.getSchema(schema);
       if (schemaMetadata !== undefined) {
         for (const [property, propDef] of schemaMetadata.props.entries()) {
           if (propDef.options.transformer?.expose || !propDef.options.transformer?.exclude) {
-            projection[property] = 1;
+            const lookup = propDef.metadata.get(METADATA.MONGOOSE_LOOKUP) as LookupOpts;
+            if (onlyTopLevel || lookup === undefined) {
+              const key = [...parents, property].join('.');
+              projection[key] = value === 1 ? 1 : propDef.type.type;
+            } else {
+              const subschemaProjection = this.__getProjection(
+                propDef.type.type,
+                onlyTopLevel,
+                [...parents, property],
+                value,
+              );
+              projection = { ...projection, ...subschemaProjection };
+            }
           }
-          /* not recursive
-        const key = [...parents, property].join('.');
-        const join = propDef.metadata.get(METADATA.MONGOOSE_JOIN) as JoinSchema | undefined;
-        if (join === undefined) {
-          if (propDef.options.transformer?.expose || !propDef.options.transformer?.exclude) {
-            projection[key] = 1;
-          }
-        } else {
-          this._getProjection(propDef.type.type, projection, [...parents, property]);
         }
-        */
-        }
-        this._cacheProjections.set(schemaName, projection);
+        this._cacheProjections.set(schemaKey, projection);
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this._cacheProjections.get(schemaName)!;
+    return this._cacheProjections.get(schemaKey)!;
   }
 
   protected _getLookupsAndUnwind(
