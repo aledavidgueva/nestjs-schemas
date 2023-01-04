@@ -36,9 +36,10 @@ export type CountComplexDocumentsOpts<T> = Omit<
 >;
 
 export type ListAllDocumentsOpts<T> = {
-  searchQuery?: string;
   limit: PipelineStage.Limit['$limit'];
   offset: PipelineStage.Skip['$skip'];
+  searchQuery?: string;
+  filter?: PipelineStage.Match['$match'];
   sort?: PipelineStage.Sort['$sort'];
   returnAs?: ClassConstructor<T>;
   transformOptions?: ClassTransformOptions;
@@ -99,13 +100,21 @@ export abstract class BaseService<
     return newString;
   }
 
-  createFilterBySearchQuery<V = TReturnDto>(
-    query: string = '',
-    returnAs: ClassConstructor<V>,
+  createFilter<V = TReturnDto>(
+    options: Required<Pick<ListAllDocumentsOpts<V>, 'returnAs'>> &
+      Pick<ListAllDocumentsOpts<V>, 'searchQuery' | 'filter'>,
   ): FilterQuery<any> {
     // regexp para validar y obtener términos de busqueda
     const regex = /"([^"]+)"|([^"\s]+)/g;
+    const filter: FilterQuery<any> = {};
+    const $and: FilterQuery<any>[] = [];
+    const query = options.searchQuery ?? '';
+    const hasFilter = options.filter && Object.getOwnPropertyNames(options.filter).length;
+    const projection = this.__getProjection(options.returnAs, false, [], 'type');
 
+    // Create filter by query builder
+
+    // Create filter by search query
     const input = this.cleanInputString(query);
     const matches = input.match(regex);
 
@@ -115,11 +124,6 @@ export abstract class BaseService<
         terms.push(match.replace(/(^"|"$)/g, ''));
       }
     }
-
-    const filter: FilterQuery<any> = {};
-    const $and: FilterQuery<any>[] = [];
-
-    const projection = this.__getProjection(returnAs, false, [], 'type');
 
     for (const term of terms) {
       const $or: FilterQuery<any>[] = [];
@@ -146,12 +150,11 @@ export abstract class BaseService<
     options: ListAllDocumentsOpts<V>,
   ): Promise<PaginatedResponseDto<V>> {
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
-    const filter: FilterQuery<any> = this.createFilterBySearchQuery(options?.searchQuery, returnAs);
+    const filter: FilterQuery<any> = this.createFilter({ ...options, returnAs });
     const resp = new PaginatedResponseDto<V>();
 
     resp.total = await this.countComplexDocuments({
       returnAs: options.returnAs,
-
       softDelete: options.softDelete,
     });
 

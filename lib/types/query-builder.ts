@@ -1,28 +1,30 @@
-export type QueryBuilderGroup = {
+export type RuleSet = {
   condition: 'and' | 'or';
-  rules: (QueryBuilderGroup | QueryBuilderRule)[];
+  rules: (RuleSet | Rule)[];
 };
 
-export type QueryBuilderRule =
+export type Rule =
   | {
       field: string;
-    }
-  | {
-      operation: 'eq' | 'ne' | 'like';
-      type: 'string';
-      value: string;
-    }
-  | {
-      type: 'string';
-      operation: 'in' | 'nin';
-      value: string[];
-    }
-  | {
-      type: 'number';
-      operation: 'equal' | 'notEqual' | 'startsWith' | 'endsWith' | 'contains';
-    }
-  | {
-      operation: 'isNull' | 'isNotNull';
-      type: 'string' | 'number' | 'boolean' | 'datetime';
-      value: null;
-    };
+    } & (
+      | {
+          operation: 'equal' | 'notEqual';
+          value: string | number | boolean;
+        }
+      | {
+          operation: 'startsWith' | 'endsWith' | 'contains';
+          value: string;
+        }
+      | {
+          operation: 'less' | 'lessOrEqual' | 'greater' | 'greaterOrEqual';
+          value: number | string;
+        }
+      | {
+          operation: 'in' | 'notIn';
+          value: (string | number | boolean)[];
+        }
+      | {
+          operation: 'isNull' | 'isNotNull';
+          value: null;
+        }
+    );
