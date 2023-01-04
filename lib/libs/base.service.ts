@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { ClassConstructor, ClassTransformOptions, plainToInstance } from 'class-transformer';
 import { FilterQuery, Document, PipelineStage } from 'mongoose';
-import { ObjectId, SchemaDef } from '../types';
+import { ObjectId, RuleSet, SchemaDef } from '../types';
 import { defaultTransformOptions, METADATA } from '../constants';
 import {
   BaseModel,
@@ -21,6 +21,8 @@ import {
 import { MetadataService } from '../metadata.service';
 import { LookupOpts } from '../decorators';
 import { PaginatedResponseDto } from '../schemas';
+import { QueryBuilderParser } from './query-builder-parser';
+import { BadRequestException } from '@nestjs/common';
 
 export type FindAllDocumentsOpts<T> = Omit<FindAllOptions<T>, 'toObject' | 'projection'> & {
   filter?: FilterQuery<any>;
@@ -39,7 +41,7 @@ export type ListAllDocumentsOpts<T> = {
   limit: PipelineStage.Limit['$limit'];
   offset: PipelineStage.Skip['$skip'];
   searchQuery?: string;
-  filter?: PipelineStage.Match['$match'];
+  filter?: RuleSet;
   sort?: PipelineStage.Sort['$sort'];
   returnAs?: ClassConstructor<T>;
   transformOptions?: ClassTransformOptions;
@@ -100,19 +102,35 @@ export abstract class BaseService<
     return newString;
   }
 
+  validateSort(sort: any, schema: Function | string) {
+    this._validateSort(sort, this._getFullProjection(schema));
+  }
+
+  protected _validateSort(input: any, projection: any) {
+    const keys = Object.getOwnPropertyNames(input);
+    const possibleKeys = Object.getOwnPropertyNames(projection);
+    for (let key of keys) {
+      if (!possibleKeys.includes(key) || input[key] !== 1 || input[key] !== -1)
+        throw new BadRequestException('SORT_VALIDATION_ERR');
+    }
+  }
+
   createFilter<V = TReturnDto>(
     options: Required<Pick<ListAllDocumentsOpts<V>, 'returnAs'>> &
       Pick<ListAllDocumentsOpts<V>, 'searchQuery' | 'filter'>,
   ): FilterQuery<any> {
     // regexp para validar y obtener términos de busqueda
     const regex = /"([^"]+)"|([^"\s]+)/g;
-    const filter: FilterQuery<any> = {};
+    let filter: FilterQuery<any> = {};
     const $and: FilterQuery<any>[] = [];
     const query = options.searchQuery ?? '';
     const hasFilter = options.filter && Object.getOwnPropertyNames(options.filter).length;
     const projection = this.__getProjection(options.returnAs, false, [], 'type');
 
     // Create filter by query builder
+    if (hasFilter) {
+      filter = new QueryBuilderParser(options.filter!, projection).getFilter();
+    }
 
     // Create filter by search query
     const input = this.cleanInputString(query);
@@ -137,7 +155,14 @@ export abstract class BaseService<
       if ($or.length) $and.push({ $or: $or });
     }
 
-    if ($and.length) filter['$and'] = $and;
+    if ($and.length) {
+      if (hasFilter) {
+        const op = filter['$and'] !== undefined ? '$and' : '$or';
+        filter = { $and: [{ [op]: filter[op] }, { $and: $and }] };
+      } else {
+        filter = { $and };
+      }
+    }
 
     return filter;
   }
@@ -150,6 +175,7 @@ export abstract class BaseService<
     options: ListAllDocumentsOpts<V>,
   ): Promise<PaginatedResponseDto<V>> {
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
+    if (options?.sort) this.validateSort(options?.sort, returnAs);
     const filter: FilterQuery<any> = this.createFilter({ ...options, returnAs });
     const resp = new PaginatedResponseDto<V>();
 

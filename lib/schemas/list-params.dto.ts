@@ -1,7 +1,8 @@
 import { $Prop, $PropNumberOptional, $PropStringOptional, $Schema } from '../decorators';
-import { IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
+import { IsObject, IsOptional } from 'class-validator';
 import { QueryOptions } from 'mongoose';
 import { TransformToPojo } from '../helpers';
+import { RuleSet } from '../types';
 
 @$Schema()
 export class ListParamsDto<T = any> {
@@ -23,7 +24,7 @@ export class ListParamsDto<T = any> {
     transformer: { expose: true, transform: [[TransformToPojo(), { toClassOnly: true }]] },
     validators: [IsOptional(), IsObject()],
   })
-  filter?: any;
+  filter?: RuleSet;
 
   @$PropStringOptional()
   query?: string;

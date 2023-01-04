@@ -123,26 +123,33 @@ export class QueryBuilderParser {
   private parseRule(rule: Rule): FilterQuery<any> {
     const schemaType = this.getSchemaType(rule.field);
     if (schemaType === undefined) throw new Error('Field in rule not exists.');
-    const type = schemaType.indexOf('Schema') ? schemaType.substring(6) : schemaType;
+    const type = schemaType.indexOf('Schema') === 0 ? schemaType.substring(6) : schemaType;
     // Set value by schema type
     let value: any;
-    switch (type) {
-      case 'String':
-        value = <string>(<unknown>rule.value);
-        value = value.trim();
-        break;
-      case 'ObjectId':
-        value = !Array.isArray(value)
-          ? new ObjectId(<string>(<unknown>rule.value))
-          : value.map((val: string) => new ObjectId(val));
-        break;
-      case 'Date':
-        value = moment(<string>(<unknown>rule.value)).toDate();
-        break;
-      case 'Number':
-      case 'Boolean':
-      default:
-        value = rule.value;
+    if (rule.value !== null) {
+      switch (type) {
+        case 'String':
+          value = !Array.isArray(rule.value)
+            ? (<string>(<unknown>rule.value)).trim()
+            : rule.value.map((val: string) => val.trim());
+          break;
+        case 'ObjectId':
+          value = !Array.isArray(rule.value)
+            ? new ObjectId(<string>(<unknown>rule.value))
+            : rule.value.map((val: string) => new ObjectId(val));
+          break;
+        case 'Date':
+          value = !Array.isArray(rule.value)
+            ? moment(<string>(<unknown>rule.value)).toDate()
+            : rule.value.map((val: string) => moment(val).toDate());
+          break;
+        case 'Number':
+        case 'Boolean':
+        default:
+          value = rule.value;
+      }
+    } else {
+      value = null;
     }
     let filter: FilterQuery<any> = {};
     // Set value by operation
@@ -220,13 +227,11 @@ export class QueryBuilderParser {
     // get field type for compat with operation
     const schemaType = this.getSchemaType(obj.field);
     if (schemaType === undefined) throw new Error('Field in rule not exists.');
+    const type = schemaType.indexOf('Schema') === 0 ? schemaType.substring(6) : schemaType;
     // validate by operation
     let found = false;
     for (const constraint of constraints) {
-      if (
-        constraint.field.includes(schemaType) ||
-        constraint.field.includes('Schema' + schemaType)
-      ) {
+      if (constraint.field.includes(type) || constraint.field.includes('Schema' + type)) {
         found = true;
         if (!constraint.validation(obj.value)) {
           throw new Error(`Constraint error on rule: ${obj}`);
