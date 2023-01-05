@@ -14,6 +14,7 @@ export const ApiPaginatedResponse = <DataDto extends Type<unknown>>(dataDto: Dat
               data: {
                 type: 'array',
                 items: { $ref: getSchemaPath(dataDto) },
+                nullable: false,
               },
             },
           },
