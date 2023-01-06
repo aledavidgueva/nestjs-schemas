@@ -110,7 +110,7 @@ export abstract class BaseService<
     const keys = Object.getOwnPropertyNames(input);
     const possibleKeys = Object.getOwnPropertyNames(projection);
     for (let key of keys) {
-      if (!possibleKeys.includes(key) || input[key] !== 1 || input[key] !== -1)
+      if (!possibleKeys.includes(key) || (input[key] !== 1 && input[key] !== -1))
         throw new BadRequestException('SORT_VALIDATION_ERR');
     }
   }
