@@ -271,7 +271,7 @@ export class QueryBuilderParser {
   }
 
   private isDate(value: any) {
-    return typeof value === 'string' && !Number.isNaN(Date.parse(value));
+    return typeof value === 'string' && Number.isFinite(Date.parse(value));
   }
 
   private isObjectId(value: any) {
