@@ -133,7 +133,7 @@ export abstract class BaseModel<TDocument extends Document> {
       }
       const result = await query.exec();
       if (options?.returnCount) {
-        return result[0].total as number;
+        return result && result.length ? (result[0].total as number) : 0;
       } else {
         return result as TDocument[];
       }
