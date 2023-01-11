@@ -81,4 +81,7 @@ export type PropCommonOpts = Pick<
 > &
   Pick<PropertyOptions, 'validators'> & {
     private?: boolean;
+  } & {
+    arrayMinSize?: number;
+    arrayMaxSize?: number;
   };

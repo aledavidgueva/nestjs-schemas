@@ -1,12 +1,22 @@
 import { Schema } from 'mongoose';
-import { IsArray, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  IsNotEmpty,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 import { $Prop } from './prop.decorator';
 import { ClassConstructor } from 'class-transformer';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
 
 type PropInstanceCommonOpts = PropCommonOpts & {};
 
-export type PropInstanceOpts<T> = PropInstanceCommonOpts & {
+export type PropInstanceOpts<T> = Omit<PropInstanceCommonOpts, 'arrayMinSize' | 'arrayMaxSize'> & {
+  arrayMinSize?: undefined;
+  arrayMaxSize?: undefined;
+} & {
   default?: T;
 };
 
@@ -146,7 +156,11 @@ function setProp<T>(
   }
 
   // Type validation
-  if (opts.isArray) prop.validators!.push(IsArray());
+  if (opts.isArray) {
+    prop.validators!.push(IsArray());
+    if ((opts.arrayMinSize ?? 0) > 0) prop.validators!.push(ArrayMinSize(opts.arrayMinSize!));
+    if ((opts.arrayMaxSize ?? 0) > 0) prop.validators!.push(ArrayMaxSize(opts.arrayMaxSize!));
+  }
   prop.validators!.push(ValidateNested({ each: opts.isArray }));
 
   // Other validations

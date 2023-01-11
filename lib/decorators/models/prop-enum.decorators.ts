@@ -1,5 +1,12 @@
 import { Schema } from 'mongoose';
-import { IsArray, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import {
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
 import { $Prop } from './prop.decorator';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
 import { CastToStringArrayOptions, CastToStringOptions } from '../../helpers';
@@ -10,7 +17,10 @@ type PropEnumCommonOpts = PropCommonOpts & {
   unique?: boolean;
 };
 
-export type PropEnumOpts = PropEnumCommonOpts & CastToStringOptions;
+export type PropEnumOpts = Omit<PropEnumCommonOpts, 'arrayMinSize' | 'arrayMaxSize'> & {
+  arrayMinSize?: undefined;
+  arrayMaxSize?: undefined;
+} & CastToStringOptions;
 export type PropEnumOptionalOpts = Omit<PropEnumOpts, 'default'> & {
   default?: Nullable<PropEnumOpts['default']>;
 };
@@ -149,7 +159,12 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   }
 
   // Type validation
-  if (opts.isArray) prop.validators!.push(IsArray());
+  if (opts.isArray) {
+    prop.validators!.push(IsArray());
+    if ((opts.arrayMinSize ?? 0) > 0) prop.validators!.push(ArrayMinSize(opts.arrayMinSize!));
+    if ((opts.arrayMaxSize ?? 0) > 0) prop.validators!.push(ArrayMaxSize(opts.arrayMaxSize!));
+  }
+
   prop.validators!.push(IsEnum(opts.enum, { each: opts.isArray }));
 
   // Other validations

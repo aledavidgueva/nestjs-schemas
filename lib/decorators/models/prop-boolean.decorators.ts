@@ -1,5 +1,12 @@
 import { Schema } from 'mongoose';
-import { IsArray, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+} from 'class-validator';
 import { $Prop } from './prop.decorator';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
 import {
@@ -11,7 +18,10 @@ import {
 
 type PropBooleanCommonOpts = PropCommonOpts & {};
 
-export type PropBooleanOpts = PropBooleanCommonOpts & CastToBooleanOptions;
+export type PropBooleanOpts = Omit<PropBooleanCommonOpts, 'arrayMinSize' | 'arrayMaxSize'> & {
+  arrayMinSize?: undefined;
+  arrayMaxSize?: undefined;
+} & CastToBooleanOptions;
 export type PropBooleanOptionalOpts = Omit<PropBooleanOpts, 'default'> & {
   default?: Nullable<PropBooleanOpts['default']>;
 };
@@ -150,7 +160,12 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   }
 
   // Type validation
-  if (opts.isArray) prop.validators!.push(IsArray());
+  if (opts.isArray) {
+    prop.validators!.push(IsArray());
+    if ((opts.arrayMinSize ?? 0) > 0) prop.validators!.push(ArrayMinSize(opts.arrayMinSize!));
+    if ((opts.arrayMaxSize ?? 0) > 0) prop.validators!.push(ArrayMaxSize(opts.arrayMaxSize!));
+  }
+
   prop.validators!.push(IsBoolean({ each: opts.isArray }));
 
   // Other validations

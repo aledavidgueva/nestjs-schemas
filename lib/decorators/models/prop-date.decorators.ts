@@ -1,5 +1,15 @@
 import { Schema } from 'mongoose';
-import { IsArray, IsNotEmpty, IsOptional, IsDate, IsUrl, MaxDate, MinDate } from 'class-validator';
+import {
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  IsNotEmpty,
+  IsOptional,
+  IsDate,
+  IsUrl,
+  MaxDate,
+  MinDate,
+} from 'class-validator';
 import { $Prop } from './prop.decorator';
 import { CommonPropOpts, Nullable, PropCommonOpts, PropertyOptions } from '../../types';
 import {
@@ -15,7 +25,10 @@ type PropDateCommonOpts = PropCommonOpts & {
   unique?: boolean;
 };
 
-export type PropDateOpts = PropDateCommonOpts & CastToDateOptions;
+export type PropDateOpts = Omit<PropDateCommonOpts, 'arrayMinSize' | 'arrayMaxSize'> & {
+  arrayMinSize?: undefined;
+  arrayMaxSize?: undefined;
+} & CastToDateOptions;
 export type PropDateOptionalOpts = Omit<PropDateOpts, 'default'> & {
   default?: Nullable<PropDateOpts['default']>;
 };
@@ -149,7 +162,12 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   }
 
   // Type validation
-  if (opts.isArray) prop.validators!.push(IsArray());
+  if (opts.isArray) {
+    prop.validators!.push(IsArray());
+    if ((opts.arrayMinSize ?? 0) > 0) prop.validators!.push(ArrayMinSize(opts.arrayMinSize!));
+    if ((opts.arrayMaxSize ?? 0) > 0) prop.validators!.push(ArrayMaxSize(opts.arrayMaxSize!));
+  }
+
   prop.validators!.push(IsDate({ each: opts.isArray }));
 
   // Date validation

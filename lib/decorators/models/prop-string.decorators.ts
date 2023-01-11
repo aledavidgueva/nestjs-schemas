@@ -2,6 +2,8 @@ import { Schema } from 'mongoose';
 import ValidatorJS from 'validator';
 import {
   IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -29,7 +31,10 @@ type PropStringCommonOpts = PropCommonOpts & {
   isEmail?: boolean | ValidatorJS.IsEmailOptions;
 };
 
-export type PropStringOpts = PropStringCommonOpts & CastToStringOptions;
+export type PropStringOpts = Omit<PropStringCommonOpts, 'arrayMinSize' | 'arrayMaxSize'> & {
+  arrayMinSize?: undefined;
+  arrayMaxSize?: undefined;
+} & CastToStringOptions;
 export type PropStringOptionalOpts = Omit<PropStringOpts, 'default'> & {
   default?: Nullable<PropStringOpts['default']>;
 };
@@ -170,7 +175,12 @@ function setProp(opts: CommonPropOpts & SetPropOptions, target: any, property: a
   }
 
   // Type validation
-  if (opts.isArray) prop.validators!.push(IsArray());
+  if (opts.isArray) {
+    prop.validators!.push(IsArray());
+    if ((opts.arrayMinSize ?? 0) > 0) prop.validators!.push(ArrayMinSize(opts.arrayMinSize!));
+    if ((opts.arrayMaxSize ?? 0) > 0) prop.validators!.push(ArrayMaxSize(opts.arrayMaxSize!));
+  }
+
   prop.validators!.push(IsString({ each: opts.isArray }));
 
   // Lenght validation
