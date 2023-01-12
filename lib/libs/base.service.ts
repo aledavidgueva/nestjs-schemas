@@ -28,6 +28,11 @@ export type FindAllDocumentsOpts<T> = Omit<FindAllOptions<T>, 'toObject' | 'proj
   filter?: FilterQuery<any>;
   returnAs?: ClassConstructor<T>;
   transformOptions?: ClassTransformOptions;
+  useAggregate?: boolean;
+  filterMiddleware?: (filter: FilterQuery<any>) => FilterQuery<any>;
+  pipelineMiddleware?: (
+    pipeline: Exclude<PipelineStage, PipelineStage.Merge | PipelineStage.Out>[],
+  ) => Exclude<PipelineStage, PipelineStage.Merge | PipelineStage.Out>[];
 };
 export type FindOneDocumentOpts<T> = Omit<FindAllDocumentsOpts<T>, 'limit'>;
 export type FindDocumentByIdOpts<T> = Omit<FindOneDocumentOpts<T>, 'filter'>;
@@ -45,7 +50,8 @@ export type ListAllDocumentsOpts<T> = {
   sort?: PipelineStage.Sort['$sort'];
   returnAs?: ClassConstructor<T>;
   transformOptions?: ClassTransformOptions;
-} & SoftDeleteOption;
+} & SoftDeleteOption &
+  Pick<FindAllDocumentsOpts<T>, 'useAggregate' | 'filterMiddleware' | 'pipelineMiddleware'>;
 
 export type SearchResults<V> = {
   total: number;
@@ -176,7 +182,7 @@ export abstract class BaseService<
   ): Promise<PaginatedResponseDto<V>> {
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
     if (options?.sort) this.validateSort(options?.sort, returnAs);
-    const filter: FilterQuery<any> = this.createFilter({ ...options, returnAs });
+    let filter: FilterQuery<any> = this.createFilter({ ...options, returnAs });
     const resp = new PaginatedResponseDto<V>();
 
     resp.total = await this.countComplexDocuments({
@@ -213,17 +219,24 @@ export abstract class BaseService<
   async findAllDocuments<V = TReturnDto>(options?: FindAllDocumentsOpts<V>): Promise<V[]> {
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
 
+    // apply filter middleware
+    const filter = options?.filterMiddleware
+      ? options.filterMiddleware(options?.filter ?? {})
+      : options?.filter;
+
     // use find or aggregate?
     let result;
-    if (!this._hasSubSchemas(returnAs)) {
-      result = await this._model.findAll(options?.filter, {
+    if (!this._hasSubSchemas(returnAs) && options?.useAggregate !== true) {
+      result = await this._model.findAll(filter ?? {}, {
         ...options,
         ...this._getDefaultOptions<V>(returnAs),
       });
     } else {
+      let pipeline = this._getDefaultPipeline(returnAs, { ...options, filter });
+      if (options?.pipelineMiddleware) pipeline = options.pipelineMiddleware(pipeline);
       result = await this._model.aggregate({
         softDelete: options?.softDelete,
-        pipeline: this._getDefaultPipeline(returnAs, options),
+        pipeline,
       });
     }
 
