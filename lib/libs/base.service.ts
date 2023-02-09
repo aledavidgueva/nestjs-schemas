@@ -185,16 +185,23 @@ export abstract class BaseService<
     let filter: FilterQuery<any> = this.createFilter({ ...options, returnAs });
     const resp = new PaginatedResponseDto<V>();
 
-    resp.total = await this.countComplexDocuments({
+    /*     resp.total = await this.countComplexDocuments({
+      returnAs: options.returnAs,
+      softDelete: options.softDelete,
+    });
+ */
+
+    const { filterMiddleware, pipelineMiddleware, ...others } = options;
+
+    resp.filtered = await this.countComplexDocuments({
+      filter,
+      filterMiddleware,
+      pipelineMiddleware,
       returnAs: options.returnAs,
       softDelete: options.softDelete,
     });
 
-    resp.filtered = await this.countComplexDocuments({
-      filter,
-      returnAs: options.returnAs,
-      softDelete: options.softDelete,
-    });
+    resp.total = resp.filtered;
 
     const data = await this.findAllDocuments({
       ...options,
@@ -426,9 +433,19 @@ export abstract class BaseService<
     options?: CountComplexDocumentsOpts<V>,
   ): Promise<number> {
     const returnAs = <ClassConstructor<V>>(<unknown>options?.returnAs ?? this._returnAs);
+
+    // apply filter middleware
+    const filter = options?.filterMiddleware
+      ? options.filterMiddleware(options?.filter ?? {})
+      : options?.filter;
+
+    // apply pipeline middleware
+    let pipeline = this._getDefaultPipeline(returnAs, { ...options, filter });
+    if (options?.pipelineMiddleware) pipeline = options.pipelineMiddleware(pipeline);
+
     return await this._model.aggregateAndCount({
       softDelete: options?.softDelete,
-      pipeline: this._getDefaultPipeline(returnAs, options),
+      pipeline,
     });
   }
 
