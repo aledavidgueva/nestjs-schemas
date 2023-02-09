@@ -1,6 +1,6 @@
 {
   "name": "@aledavidgueva/nestjs-schemas",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "Metadata storage for schemas",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
