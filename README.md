@@ -1,3 +1,7 @@
+## THIS PACKAGE HAS BEEN DEPRECATED AND MOVED
+
+Moved to [https://github.com/wandu-ar/nestjs-schemas](https://github.com/wandu-ar/nestjs-schemas)
+
 # Custom metadata storage for NestJS projects
 
 - New storage for custom metadata for schemas and props types, with access available for dev by service.
